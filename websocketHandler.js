@@ -9,6 +9,7 @@ function sendError(ws, message, errorType = 'general') {
 const handleAuthenticatedConnection = async (ws, pool, userId) => {
     const clientAddress = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
     console.log(`Authenticated connection established with ${clientAddress} for user id ${userId}`);
+    // Create session without conversation ID, it will be generated on first message or new chat
     sessionManager.createSession(clientAddress, geminiService.model, geminiService.generationConfig, geminiService.systemInstruction, userId, ws);
     ws.send(JSON.stringify({ type: 'connection_success', userId: userId }));
     setupMessageHandling(ws, pool, userId, clientAddress);
@@ -108,16 +109,48 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         try {
             const data = JSON.parse(messageString);
             const action = data.action;
-              if (action === 'logout') {
-                    console.log(`logout request received from ${clientAddress}`)
-                   sessionManager.deleteSessionByUserId(userId);
-                //    ws.close(1000, "logout request");
-                } else if (action === 'send_message') {
+            if (action === 'logout') {
+                  console.log(`logout request received from ${clientAddress}`)
+                 // save current conversation on logout
+                    const currentConversationId = sessionManager.getCurrentConversationIdBySocket(ws);
+                    const currentChat = sessionManager.getChatHistoryBySocket(ws);
+                    if(currentConversationId && currentChat && currentChat.history.length > 0){
+                       console.log(`saving current conversation ${currentConversationId} on logout`)
+                        await saveConversationMessages(pool, userId, currentChat, currentConversationId)
+                    }
+                  sessionManager.deleteSessionByUserId(userId);
+            }
+              else if (action === 'new_chat') {
+                 //save current conversation on new chat
+                    const currentConversationId = sessionManager.getCurrentConversationIdBySocket(ws);
+                    const currentChat = sessionManager.getChatHistoryBySocket(ws);
+
+                    if(currentConversationId && currentChat && currentChat.history.length > 0) {
+                       console.log(`saving current conversation ${currentConversationId} on new_chat`)
+                       await saveConversationMessages(pool, userId, currentChat, currentConversationId);
+                    }
+
+                //Create a new conversation id
+                 const newConversationId = await createNewConversation(pool, userId);
+                 sessionManager.setCurrentConversationIdBySocket(ws,newConversationId);
+
+                ws.send(JSON.stringify({ type: 'new_chat_success', conversationId: newConversationId }));
+              }
+             else if (action === 'send_message') {
                 const userMessage = data.message?.trim();
                 if (!userMessage) {
                     sendError(ws, 'No message provided', 'input_validation');
                     return;
                 }
+               let currentConversationId = sessionManager.getCurrentConversationIdBySocket(ws);
+               if(!currentConversationId){
+                  console.log(`creating new conversation for user id ${userId}`)
+                   currentConversationId = await createNewConversation(pool, userId);
+                   sessionManager.setCurrentConversationIdBySocket(ws,currentConversationId);
+                   ws.send(JSON.stringify({ type: 'new_chat_success', conversationId: currentConversationId }));
+               }
+
+
                 const chat = sessionManager.getChatHistoryBySocket(ws);
                 if (!chat) {
                     console.error(`Chat history not found for ${clientAddress}`);
@@ -128,11 +161,13 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
                     const botResponse = await geminiService.generateResponse(chat, userMessage, ws);
                     const htmlResponse = geminiService.md.render(botResponse);
                     const timestamp = Date.now();
+
                     const messageToSaveUser = {
                         userId: userId,
                         type: 'user',
                         message: userMessage,
-                        timestamp: timestamp
+                        timestamp: timestamp,
+                        conversationId: currentConversationId
                     };
                     await saveMessage(pool, messageToSaveUser);
 
@@ -140,24 +175,36 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
                         userId: userId,
                         type: 'bot',
                         message: htmlResponse,
-                        timestamp: timestamp
+                        timestamp: timestamp,
+                        conversationId: currentConversationId
                     };
                     await saveMessage(pool, messageToSaveBot);
 
-                    ws.send(JSON.stringify({ type: 'bot', message: htmlResponse }));
+                    ws.send(JSON.stringify({ type: 'bot', message: htmlResponse, conversationId: currentConversationId }));
 
                 } catch (error) {
                     console.error('Error processing message:', error);
                     sendError(ws, 'An error occurred while processing your request.', 'internal_error');
                 }
 
-            } else if (action === 'load_previous_messages') {
+            }
+            else if (action === 'load_previous_conversations') {
+               try {
+                   const conversations = await loadPreviousConversations(pool, userId);
+                   ws.send(JSON.stringify({ type: 'previous_conversations', conversations: conversations }));
+               } catch (error) {
+                   console.error('Error loading previous conversations:', error);
+                   sendError(ws, 'An error occurred while loading previous conversations.', 'internal_error');
+               }
+           }
+            else if (action === 'load_conversation') {
                 try {
-                    const messages = await loadPreviousMessages(pool, userId, ws);
-                    ws.send(JSON.stringify({ type: 'previous_messages', message: messages }));
+                    const conversationId = data.conversationId;
+                    const messages = await loadConversationMessages(pool, conversationId);
+                    ws.send(JSON.stringify({ type: 'conversation_messages', messages: messages, conversationId: conversationId }));
                 } catch (error) {
-                    console.error('Error loading previous messages:', error);
-                    sendError(ws, 'An error occurred while loading previous messages.', 'internal_error');
+                    console.error('Error loading conversation messages:', error);
+                    sendError(ws, 'An error occurred while loading conversation messages.', 'internal_error');
                 }
             } else if (action === 'edit_message') {
                 try {
@@ -187,21 +234,43 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
 
     ws.on('close', () => {
         console.log(`WebSocket closed for user ID ${userId}`);
+        //save current conversation on socket close
+           const currentConversationId = sessionManager.getCurrentConversationIdBySocket(ws);
+           const currentChat = sessionManager.getChatHistoryBySocket(ws);
+            if(currentConversationId && currentChat && currentChat.history.length > 0){
+               console.log(`saving current conversation ${currentConversationId} on socket close`)
+                saveConversationMessages(pool, userId, currentChat, currentConversationId)
+            }
+
          sessionManager.deleteSessionBySocket(ws);
     });
 
     ws.on('error', error => {
         console.error(`WebSocket error for user ID ${userId}:`, error);
-        sessionManager.deleteSessionBySocket(ws);
+         sessionManager.deleteSessionBySocket(ws);
     });
 };
+async function createNewConversation(pool, userId) {
+    try {
+      const conn = await pool.getConnection();
+      const [result] = await conn.execute(
+          'INSERT INTO conversations (userId) VALUES (?)',
+          [userId]
+      );
+        conn.release();
+      return result.insertId;
+    } catch (err) {
+        console.error("Error creating new conversation", err)
+      throw err;
+    }
+  }
 
 async function saveMessage(pool, message) {
     try {
         const conn = await pool.getConnection();
         const [result] = await conn.execute(
-            'INSERT INTO messages (userId, type, message, timestamp) VALUES (?, ?, ?, ?)',
-            [message.userId, message.type, message.message, message.timestamp]
+            'INSERT INTO messages (conversationId, userId, type, message, timestamp) VALUES (?, ?, ?, ?, ?)',
+            [message.conversationId, message.userId, message.type, message.message, message.timestamp]
         );
         conn.release();
         return result.insertId;
@@ -210,17 +279,61 @@ async function saveMessage(pool, message) {
         throw err;
     }
 }
-
-async function loadPreviousMessages(pool, userId, ws, page = 1, pageSize = 10) {
+async function saveConversationMessages(pool, userId, chat, conversationId) {
     try {
-        const offset = (page - 1) * pageSize;
+       const messages = chat.history
+       if(!messages || messages.length === 0){
+          console.log("no messages to save in this conversation");
+          return
+       }
+
+         for (const message of messages) {
+             const messageType = message.role;
+             const messageText = message.parts[0].text;
+             const timestamp = Date.now(); // or get from the message if available
+             const messageToSave = {
+                conversationId: conversationId,
+                 userId: userId,
+                 type: messageType,
+                 message: messageText,
+                 timestamp: timestamp
+             }
+            await saveMessage(pool, messageToSave)
+        }
+
+    } catch (err) {
+        console.error('Error saving conversation messages:', err);
+        throw err;
+    }
+}
+
+async function loadPreviousConversations(pool, userId) {
+    try {
         const conn = await pool.getConnection();
-        const [rows] = await conn.execute(
-            'SELECT id, type, message, timestamp FROM messages WHERE userId = ? ORDER BY timestamp DESC LIMIT ?, ?',
-            [userId, parseInt(offset, 10), parseInt(pageSize, 10)]
+         const [rows] = await conn.execute(
+            'SELECT id, startTime FROM conversations WHERE userId = ? ORDER BY startTime DESC',
+             [userId]
         );
         conn.release();
-        console.log("Sending previous messages:", rows);
+       return rows.map(row => ({
+            id: row.id,
+            startTime: row.startTime
+        }));
+
+    } catch (err) {
+        console.error('Error loading previous conversations:', err);
+         throw err;
+    }
+}
+
+async function loadConversationMessages(pool, conversationId) {
+    try {
+        const conn = await pool.getConnection();
+        const [rows] = await conn.execute(
+            'SELECT id, type, message, timestamp FROM messages WHERE conversationId = ? ORDER BY timestamp ASC',
+            [conversationId]
+        );
+        conn.release();
         return rows.map(row => ({
             id: row.id,
             type: row.type,
@@ -228,9 +341,8 @@ async function loadPreviousMessages(pool, userId, ws, page = 1, pageSize = 10) {
             timestamp: row.timestamp
         }));
     } catch (err) {
-        console.error('Error loading previous messages:', err);
-        sendError(ws, 'Error loading previous messages from the database.', 'database_error');
-        return [];
+        console.error('Error loading conversation messages:', err);
+        throw err;
     }
 }
 

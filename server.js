@@ -35,6 +35,7 @@ async function connectDB() {
         const connection = await pool.getConnection();
         console.log('Connected to the MySQL database!');
 
+        // Create users table
         await connection.execute(`
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,18 +49,31 @@ async function connectDB() {
             )
         `);
 
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS messages (
+        // Create conversations table
+       await connection.execute(`
+            CREATE TABLE IF NOT EXISTS conversations (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 userId INT NOT NULL,
-                type VARCHAR(50) NOT NULL,
-                message TEXT NOT NULL,
-                timestamp BIGINT NOT NULL,
+                startTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (userId) REFERENCES users(id)
             )
         `);
 
-        console.log('Ensured users and messages tables exist.');
+         // Create messages table with conversationId
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                conversationId INT NOT NULL,
+                userId INT NOT NULL,
+                type VARCHAR(50) NOT NULL,
+                message TEXT NOT NULL,
+                timestamp BIGINT NOT NULL,
+                FOREIGN KEY (userId) REFERENCES users(id),
+                FOREIGN KEY (conversationId) REFERENCES conversations(id)
+            )
+        `);
+
+        console.log('Ensured users, conversations and messages tables exist.');
 
         connection.release();
 
@@ -99,7 +113,7 @@ async function startServer() {
 
             } catch (err) {
                 console.error('Error processing message:', err);
-                if (messageString) {
+                 if (messageString) {
                     console.error("Could not JSON.parse(messageString):", messageString);
                     ws.send(JSON.stringify({ type: "error", message: "Data parsing error, check log for more", error_type: 'message_parsing_error' }));
                 }
@@ -130,7 +144,7 @@ async function startServer() {
         setInterval(() => {
             wss.clients.forEach(ws => {
                 if (!ws.isAlive) {
-                    const clientAddress = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+                     const clientAddress = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
                     console.log(`Closing inactive connection for ${clientAddress}`);
                     sessionManager.deleteSessionBySocket(ws);
                     return ws.terminate();
@@ -138,7 +152,7 @@ async function startServer() {
                 ws.isAlive = false;
                 ws.ping(null, false);
             });
-            sessionManager.checkInactiveSessions(wss);
+             sessionManager.checkInactiveSessions(wss);
         }, 30 * 1000); // Check for inactive clients and sessions every 30 seconds
     });
 }

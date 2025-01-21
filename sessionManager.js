@@ -2,6 +2,7 @@ const chatHistories = new Map();
 const clientActivity = new Map();
 const userSessions = new Map(); // Maps clientAddress to userId
 const socketToSession = new Map(); // Maps WebSocket to session details (includes chat history)
+const conversationIds = new Map(); //Maps socket to conversation id
 const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
 
 const createSession = (clientAddress, model, generationConfig, systemInstruction, userId, ws) => {
@@ -12,6 +13,7 @@ const createSession = (clientAddress, model, generationConfig, systemInstruction
         },
         history: [],
     });
+    chatHistory.history = [];
     chatHistories.set(clientAddress, chatHistory);
     clientActivity.set(clientAddress, Date.now());
     userSessions.set(clientAddress, userId);
@@ -41,6 +43,7 @@ const deleteSession = (clientAddress) => {
     chatHistories.delete(clientAddress);
     clientActivity.delete(clientAddress);
     userSessions.delete(clientAddress);
+     conversationIds.delete(clientAddress);
     // Clean up socketToSession as well
     socketToSession.forEach((session, ws) => {
         if (session.clientAddress === clientAddress) {
@@ -55,16 +58,18 @@ const deleteSessionBySocket = (ws) => {
         chatHistories.delete(clientAddress);
         clientActivity.delete(clientAddress);
         userSessions.delete(clientAddress);
+        conversationIds.delete(clientAddress);
         socketToSession.delete(ws);
         console.log(`Session deleted for ${clientAddress} due to socket closure.`);
     }
 };
 const deleteSessionByUserId = (userId) => {
     socketToSession.forEach((session, ws) => {
-        if(userSessions.get(session.clientAddress) === userId){
+         if(userSessions.get(session.clientAddress) === userId){
            chatHistories.delete(session.clientAddress);
            clientActivity.delete(session.clientAddress);
            userSessions.delete(session.clientAddress);
+             conversationIds.delete(session.clientAddress);
            socketToSession.delete(ws);
            console.log(`Session deleted for userId ${userId}`)
         }
@@ -89,6 +94,20 @@ const checkInactiveSessions = (wss) => {
 const getUserSessionId = (clientAddress) => {
     return userSessions.get(clientAddress);
 };
+const setCurrentConversationIdBySocket = (ws, conversationId) => {
+    if(socketToSession.has(ws)){
+        const { clientAddress } = socketToSession.get(ws);
+       conversationIds.set(clientAddress, conversationId);
+    }
+}
+const getCurrentConversationIdBySocket = (ws) => {
+  if(socketToSession.has(ws)){
+      const { clientAddress } = socketToSession.get(ws);
+     return conversationIds.get(clientAddress);
+  }
+  return null;
+}
+
 
 module.exports = {
     chatHistories,
@@ -102,5 +121,7 @@ module.exports = {
     deleteSessionByUserId, // Added
     checkInactiveSessions,
     SESSION_TIMEOUT,
-    getUserSessionId
+    getUserSessionId,
+    setCurrentConversationIdBySocket,
+    getCurrentConversationIdBySocket
 };

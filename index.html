@@ -33,6 +33,7 @@
         --shadow-color: rgba(0, 0, 0, 0.4);
         --glass-effect: rgba(255, 255, 255, 0.1);
       }
+
       body {
         font-family: "Roboto", sans-serif;
         background-color: var(--background-color);
@@ -53,6 +54,7 @@
         max-width: 800px;
         padding: 20px;
       }
+
       .auth-container {
         background-color: var(--container-background);
         border-radius: 15px;
@@ -108,6 +110,7 @@
         cursor: pointer;
         transition: background-color 0.3s ease;
       }
+
       .auth-container button:hover {
         background-color: var(--primary-color-darker);
       }
@@ -180,6 +183,61 @@
         background-color: var(--primary-color);
         color: var(--container-background);
       }
+      .conversation-list-container {
+        position: absolute;
+        top: 70px;
+        left: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        background-color: var(--container-background);
+        border-radius: 5px;
+        display: none;
+        z-index: 1001;
+        width: 300px;
+      }
+
+      .conversation-list-container.show {
+        display: block;
+      }
+      .conversation-list-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .conversation-list-container li {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      .conversation-list-container li:last-child {
+        border-bottom: none;
+      }
+
+      .conversation-list-container li:hover {
+        background-color: var(--primary-color);
+        color: var(--container-background);
+      }
+      .conversation-list-container li.selected {
+        background-color: var(--primary-color-darker);
+        color: var(--container-background);
+      }
+      .conversation-list-container button {
+        background-color: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--primary-color);
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        margin: 10px;
+      }
+      .conversation-list-container button:hover {
+        background-color: var(--primary-color);
+        color: var(--container-background);
+      }
 
       .chat-messages {
         flex-grow: 1;
@@ -239,6 +297,7 @@
         overflow-y: auto;
         max-height: 150px;
       }
+
       .message-actions {
         position: absolute;
         top: 5px;
@@ -260,6 +319,7 @@
         font-size: 0.9em;
         margin-left: 5px;
       }
+
       .message-actions button:hover {
         color: var(--primary-color);
       }
@@ -308,6 +368,7 @@
         border-color: var(--primary-color);
         outline: none;
       }
+
       .clear-input-button {
         position: absolute;
         right: 10px;
@@ -334,6 +395,7 @@
         position: relative;
         white-space: nowrap;
       }
+
       .send-button i {
         margin-left: 5px;
       }
@@ -360,14 +422,17 @@
       .send-button.loading span:not(.spinner) {
         display: none;
       }
+
       .send-button.loading {
         padding-left: 20px;
         padding-right: 20px;
       }
+
       @keyframes spin {
         0% {
           transform: translate(-50%, -50%) rotate(0deg);
         }
+
         100% {
           transform: translate(-50%, -50%) rotate(360deg);
         }
@@ -421,6 +486,7 @@
         background-color: #333;
         color: white;
       }
+
       /* Basic Animation */
       @keyframes fadeIn {
         from {
@@ -470,13 +536,16 @@
         .chat-input-area {
           padding: 15px;
         }
+
         .message {
           max-width: 90%;
         }
+
         .copy-button {
           font-size: 0.8em;
         }
       }
+
       .typing-indicator {
         align-self: flex-start;
         font-size: 0.9em;
@@ -484,6 +553,7 @@
         font-style: italic;
         margin-left: 10px;
       }
+
       .scroll-down-button {
         position: absolute;
         bottom: 20px;
@@ -502,12 +572,13 @@
         transition: opacity 0.3s ease;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
       }
+
       .scroll-down-button.show {
         opacity: 1;
       }
 
       .load-previous-button {
-        position: absolute;
+        position: relative;
         top: 10px;
         left: 10px;
         background-color: transparent;
@@ -559,11 +630,13 @@
         width: 90%;
         text-align: center;
       }
+
       .verify-email-overlay .verify-email-container p {
         margin-bottom: 15px;
       }
     </style>
   </head>
+
   <body>
     <div
       class="verify-email-overlay"
@@ -583,14 +656,21 @@
           <button class="new-chat-button" id="new-chat-button">
             <i class="fas fa-plus"></i> New Chat
           </button>
+          <button class="new-chat-button" id="load-conversations-button">
+            <i class="fas fa-history"></i> Load Conversations
+          </button>
           <button class="new-chat-button" id="logout-button">
             <i class="fas fa-sign-out-alt"></i> Logout
           </button>
         </header>
+        <div
+          class="conversation-list-container"
+          id="conversation-list-container"
+        >
+          <ul id="conversation-list"></ul>
+          <button id="close-conversations-button">Close</button>
+        </div>
         <main class="chat-messages" id="chat-messages">
-          <button class="load-previous-button" id="load-previous-button">
-            Load Previous Messages
-          </button>
           <div
             id="typing-indicator"
             class="typing-indicator"
@@ -732,657 +812,730 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
-        const chatApp = document.getElementById("chat-app");
-        const authContainer = document.getElementById("auth-container");
-        const chatForm = document.getElementById("chat-form");
-        const chatInput = document.getElementById("chat-input");
-        const chatMessages = document.getElementById("chat-messages");
-        const loadingOverlay = document.getElementById("loading-overlay");
-        const errorDisplay = document.getElementById("error-display");
-        const sendButton = document.getElementById("send-button");
-        const newChatButton = document.getElementById("new-chat-button");
-        const typingIndicator = document.getElementById("typing-indicator");
-        const clearInputButton = document.getElementById("clear-input-button");
-        const scrollDownButton = document.getElementById("scroll-down-button");
-        const loadPreviousButton = document.getElementById(
-          "load-previous-button"
-        );
-        const loadingPreviousMessages = document.getElementById(
-          "loading-previous-messages"
-        );
-        const authErrorDisplay = document.getElementById("auth-error-display");
-        const logoutButton = document.getElementById("logout-button");
-  
-        const signupForm = document.getElementById("signup-form");
-        const loginForm = document.getElementById("login-form");
-        const signupFormDiv = document.getElementById("signup-form-div");
-        const loginFormDiv = document.getElementById("login-form-div");
-  
-        const forgotPasswordDiv = document.getElementById("forgot-password-div");
-        const forgotPasswordForm = document.getElementById(
-          "forgot-password-form"
-        );
-        const resetPasswordForm = document.getElementById("reset-password-form");
-        const resetPasswordDiv = document.getElementById("reset-password-div");
-  
-        const toggleLoginLink = document.getElementById("toggle-login");
-        const toggleSignupLink = document.getElementById("toggle-signup");
-        const forgotPasswordLink = document.getElementById("forgot-password");
-        const toggleLoginFromForgot = document.getElementById(
-          "toggle-login-from-forgot"
-        );
-  
-        const verifyEmailOverlay = document.getElementById(
-          "verify-email-overlay"
-        );
-  
-        const verifyEmailText = document.getElementById("verify_email_text");
-        const closeVerifyEmailButton =
-          document.getElementById("close-verify-email");
-        let authToken = localStorage.getItem("authToken");
-        const socket = new WebSocket("ws://192.168.43.45:8765");
-  
-        closeVerifyEmailButton.addEventListener("click", () => {
-          verifyEmailOverlay.style.display = "none";
-        });
-  
-        function getQueryParam(name) {
-          const urlParams = new URLSearchParams(window.location.search);
-          return urlParams.get(name);
+      const chatApp = document.getElementById("chat-app");
+      const authContainer = document.getElementById("auth-container");
+      const chatForm = document.getElementById("chat-form");
+      const chatInput = document.getElementById("chat-input");
+      const chatMessages = document.getElementById("chat-messages");
+      const loadingOverlay = document.getElementById("loading-overlay");
+      const errorDisplay = document.getElementById("error-display");
+      const sendButton = document.getElementById("send-button");
+      const newChatButton = document.getElementById("new-chat-button");
+      const typingIndicator = document.getElementById("typing-indicator");
+      const clearInputButton = document.getElementById("clear-input-button");
+      const scrollDownButton = document.getElementById("scroll-down-button");
+      const loadingPreviousMessages = document.getElementById(
+        "loading-previous-messages"
+      );
+      const authErrorDisplay = document.getElementById("auth-error-display");
+      const logoutButton = document.getElementById("logout-button");
+
+      const signupForm = document.getElementById("signup-form");
+      const loginForm = document.getElementById("login-form");
+      const signupFormDiv = document.getElementById("signup-form-div");
+      const loginFormDiv = document.getElementById("login-form-div");
+
+      const forgotPasswordDiv = document.getElementById("forgot-password-div");
+      const forgotPasswordForm = document.getElementById(
+        "forgot-password-form"
+      );
+      const resetPasswordForm = document.getElementById("reset-password-form");
+      const resetPasswordDiv = document.getElementById("reset-password-div");
+
+      const toggleLoginLink = document.getElementById("toggle-login");
+      const toggleSignupLink = document.getElementById("toggle-signup");
+      const forgotPasswordLink = document.getElementById("forgot-password");
+      const toggleLoginFromForgot = document.getElementById(
+        "toggle-login-from-forgot"
+      );
+
+      const verifyEmailOverlay = document.getElementById(
+        "verify-email-overlay"
+      );
+      const loadConversationsButton = document.getElementById(
+        "load-conversations-button"
+      );
+      const conversationListContainer = document.getElementById(
+        "conversation-list-container"
+      );
+      const closeConversationsButton = document.getElementById(
+        "close-conversations-button"
+      );
+      const conversationList = document.getElementById("conversation-list");
+
+      const verifyEmailText = document.getElementById("verify_email_text");
+      const closeVerifyEmailButton =
+        document.getElementById("close-verify-email");
+      let selectedConversationId = null;
+
+      let authToken = localStorage.getItem("authToken");
+      const socket = new WebSocket("ws://192.168.43.45:8765");
+
+      closeVerifyEmailButton.addEventListener("click", () => {
+        verifyEmailOverlay.style.display = "none";
+      });
+      closeConversationsButton.addEventListener("click", () => {
+        conversationListContainer.classList.remove("show");
+      });
+
+      function getQueryParam(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+      }
+      const tokenType = getQueryParam("type");
+      const emailVerificationToken = getQueryParam("token");
+      const resetPasswordToken = getQueryParam("token");
+
+      socket.onopen = () => {
+        console.log("Connected to WebSocket server.");
+        if (authToken) {
+          console.log("Sending stored auth token:", authToken);
+          socket.send(JSON.stringify({ userId: authToken }));
+          authContainer.style.display = "none";
+          chatApp.style.display = "flex";
+        } else if (tokenType === "verify" && emailVerificationToken) {
+          console.log(
+            "Email verification token found in URL:",
+            emailVerificationToken
+          );
+          socket.send(
+            JSON.stringify({
+              action: "verify_email",
+              token: emailVerificationToken,
+            })
+          );
+        } else if (tokenType === "reset" && resetPasswordToken) {
+          console.log("Reset password token found in URL:", resetPasswordToken);
+          signupFormDiv.style.display = "none";
+          loginFormDiv.style.display = "none";
+          forgotPasswordDiv.style.display = "none";
+          resetPasswordDiv.style.display = "flex";
+        } else {
+          authContainer.style.display = "flex";
+          chatApp.style.display = "none";
         }
-        const tokenType = getQueryParam("type");
-        const emailVerificationToken = getQueryParam("token");
-        const resetPasswordToken = getQueryParam("token");
-  
-        socket.onopen = () => {
-          console.log("Connected to WebSocket server.");
-          if (authToken) {
-            console.log("Sending stored auth token:", authToken);
-            socket.send(JSON.stringify({ userId: authToken }));
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const responseData = JSON.parse(event.data);
+          const messageType = responseData.type;
+          const messageContent = responseData.message;
+          const errorType = responseData.error_type;
+          const conversationId = responseData.conversationId;
+
+          console.log("Received from server:", responseData);
+
+          if (messageType === "connection_success") {
+            const userId = responseData.userId;
+            console.log("Connection Successful, userId:", userId);
+            authToken = userId;
+            localStorage.setItem("authToken", userId);
             authContainer.style.display = "none";
             chatApp.style.display = "flex";
-          } else if (tokenType === "verify" && emailVerificationToken) {
-            console.log(
-              "Email verification token found in URL:",
-              emailVerificationToken
+            hideLoading();
+          } else if (messageType === "status" && messageContent === "typing") {
+            showTypingIndicator();
+          } else if (messageType === "new_chat_success") {
+            console.log("new chat success conversation id", conversationId);
+            selectedConversationId = conversationId;
+            chatMessages.innerHTML = "";
+            hideLoading();
+            toggleButtonLoading(false);
+          } else if (messageType === "bot") {
+            addMessageToChat(
+              messageContent,
+              "bot",
+              false,
+              null,
+              null,
+              conversationId
             );
-            socket.send(
-              JSON.stringify({
-                action: "verify_email",
-                token: emailVerificationToken,
-              })
-            );
-          } else if (tokenType === "reset" && resetPasswordToken) {
-            console.log("Reset password token found in URL:", resetPasswordToken);
-            signupFormDiv.style.display = "none";
-            loginFormDiv.style.display = "none";
-            forgotPasswordDiv.style.display = "none";
-            resetPasswordDiv.style.display = "flex";
-          } else {
-            authContainer.style.display = "flex";
-            chatApp.style.display = "none";
-          }
-        };
-  
-        socket.onmessage = (event) => {
-          try {
-            const responseData = JSON.parse(event.data);
-            const messageType = responseData.type;
-            const messageContent = responseData.message;
-            const errorType = responseData.error_type;
-            console.log("Received from server:", responseData);
-  
-            if (messageType === "connection_success") {
-              const userId = responseData.userId;
-              console.log("Connection Successful, userId:", userId);
-              authToken = userId;
-              localStorage.setItem("authToken", userId);
-              authContainer.style.display = "none";
-              chatApp.style.display = "flex";
-              hideLoading();
-            } else if (messageType === "status" && messageContent === "typing") {
-              showTypingIndicator();
-            } else if (messageType === "bot") {
-              addMessageToChat(messageContent, "bot");
-              hideLoading();
-              hideTypingIndicator();
-              toggleButtonLoading(false);
-            } else if (messageType === "previous_messages") {
-              hideLoadingPreviousMessages();
-              messageContent.forEach((msg) => {
+            hideLoading();
+            hideTypingIndicator();
+            toggleButtonLoading(false);
+          } else if (messageType === "previous_conversations") {
+            hideLoadingPreviousMessages();
+            displayConversationList(responseData.conversations);
+            toggleButtonLoading(false);
+          } else if (messageType === "conversation_messages") {
+            hideLoadingPreviousMessages();
+            chatMessages.innerHTML = "";
+            selectedConversationId = responseData.conversationId;
+            if (responseData.messages) {
+              responseData.messages.forEach((msg) => {
                 addMessageToChat(
                   msg.message,
                   msg.type,
-                  true,
+                  false,
                   msg.id,
-                  msg.timestamp
+                  msg.timestamp,
+                  responseData.conversationId
                 );
               });
-              toggleButtonLoading(false);
-            } else if (messageType === "message_edited") {
-              const messageId = responseData.messageId;
-              const newMessage = responseData.newMessage;
-              updateMessage(messageId, newMessage);
-            } else if (messageType === "message_deleted") {
-              const messageId = responseData.messageId;
-              deleteMessageFromUI(messageId);
-            } else if (messageType === "signup_success") {
-              const userId = responseData.userId;
-              console.log("SignUp Successful userId:", userId);
-              authToken = userId;
-              localStorage.setItem("authToken", userId);
-              authContainer.style.display = "none";
-              chatApp.style.display = "flex";
-              hideLoading();
-            } else if (messageType === "login_success") {
-              const userId = responseData.userId;
-              console.log("Login Successful userId:", userId);
-              authToken = userId;
-              localStorage.setItem("authToken", userId);
-              authContainer.style.display = "none";
-              chatApp.style.display = "flex";
-              hideLoading();
-            } else if (messageType === "verify_email_success") {
-              verifyEmailOverlay.style.display = "flex";
-              verifyEmailText.innerText = messageContent;
-              authErrorDisplay.style.display = "none";
-            } else if (messageType === "forgot_password_success") {
-              displayAuthMessage(messageContent);
-              hideLoading();
-            } else if (messageType === "reset_password_success") {
-              resetPasswordDiv.style.display = "none";
-              loginFormDiv.style.display = "flex";
-              displayAuthMessage(messageContent);
-              hideLoading();
-            } else if (messageType === "error") {
-              displayError(messageContent, errorType);
-              hideLoading();
-              hideTypingIndicator();
-              toggleButtonLoading(false);
-  
-              if (
-                errorType === "signup_error" ||
-                errorType === "login_error" ||
-                errorType === "forgot_password_error" ||
-                errorType === "reset_password_error" ||
-                errorType === "verify_email_error"
-              ) {
-                displayAuthError(messageContent, errorType);
-              }
-            } else {
-              console.warn(
-                "Unrecognised message type:",
-                messageType,
-                responseData
-              );
             }
-          } catch (error) {
-            console.error("Error handling message:", error);
+            toggleButtonLoading(false);
+          } else if (messageType === "message_edited") {
+            const messageId = responseData.messageId;
+            const newMessage = responseData.newMessage;
+            updateMessage(messageId, newMessage);
+          } else if (messageType === "message_deleted") {
+            const messageId = responseData.messageId;
+            deleteMessageFromUI(messageId);
+          } else if (messageType === "signup_success") {
+            const userId = responseData.userId;
+            console.log("SignUp Successful userId:", userId);
+            authToken = userId;
+            localStorage.setItem("authToken", userId);
+            authContainer.style.display = "none";
+            chatApp.style.display = "flex";
+            hideLoading();
+          } else if (messageType === "login_success") {
+            const userId = responseData.userId;
+            console.log("Login Successful userId:", userId);
+            authToken = userId;
+            localStorage.setItem("authToken", userId);
+            authContainer.style.display = "none";
+            chatApp.style.display = "flex";
+            hideLoading();
+          } else if (messageType === "verify_email_success") {
+            verifyEmailOverlay.style.display = "flex";
+            verifyEmailText.innerText = messageContent;
+            authErrorDisplay.style.display = "none";
+          } else if (messageType === "forgot_password_success") {
+            displayAuthMessage(messageContent);
+            hideLoading();
+          } else if (messageType === "reset_password_success") {
+            resetPasswordDiv.style.display = "none";
+            loginFormDiv.style.display = "flex";
+            displayAuthMessage(messageContent);
+            hideLoading();
+          } else if (messageType === "error") {
+            displayError(messageContent, errorType);
+            hideLoading();
+            hideTypingIndicator();
+            toggleButtonLoading(false);
+
+            if (
+              errorType === "signup_error" ||
+              errorType === "login_error" ||
+              errorType === "forgot_password_error" ||
+              errorType === "reset_password_error" ||
+              errorType === "verify_email_error"
+            ) {
+              displayAuthError(messageContent, errorType);
+            }
+          } else {
+            console.warn(
+              "Unrecognised message type:",
+              messageType,
+              responseData
+            );
           }
+        } catch (error) {
+          console.error("Error handling message:", error);
+        }
+      };
+      const passwordRegex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      }
+      signupForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        authErrorDisplay.style.display = "none";
+        const username = document.getElementById("signup-username").value;
+        const email = document.getElementById("signup-email").value;
+        const password = document.getElementById("signup-password").value;
+
+        if (!username.trim()) {
+          displayAuthError("Username field is required", "signup_error");
+          return;
+        }
+        if (!isValidEmail(email)) {
+          displayAuthError(
+            "Please provide a valid email format",
+            "signup_error"
+          );
+          return;
+        }
+        if (!passwordRegex.test(password)) {
+          displayAuthError(
+            "Password must be 8 chars long min, have one uppercase, one lowercase and one special character",
+            "signup_error"
+          );
+          return;
+        }
+        showLoading();
+        console.log(`Attempting signup payload`, {
+          username: username,
+          email: email,
+          password: password,
+        });
+        const signupPayload = {
+          action: "signup",
+          username: username,
+          email: email,
+          password: password,
         };
-        const passwordRegex =
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-        function isValidEmail(email) {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return emailRegex.test(email);
-        }
-        signupForm.addEventListener("submit", (e) => {
-          e.preventDefault();
-          authErrorDisplay.style.display = "none";
-          const username = document.getElementById("signup-username").value;
-          const email = document.getElementById("signup-email").value;
-          const password = document.getElementById("signup-password").value;
-  
-          if (!username.trim()) {
-            displayAuthError("Username field is required", "signup_error");
-            return;
-          }
-          if (!isValidEmail(email)) {
-            displayAuthError(
-              "Please provide a valid email format",
-              "signup_error"
-            );
-            return;
-          }
-          if (!passwordRegex.test(password)) {
-            displayAuthError(
-              "Password must be 8 chars long min, have one uppercase, one lowercase and one special character",
-              "signup_error"
-            );
-            return;
-          }
-          showLoading();
-          console.log(`Attempting signup payload`, {
-            username: username,
-            email: email,
-            password: password,
-          });
-          const signupPayload = {
-            action: "signup",
-            username: username,
-            email: email,
-            password: password,
-          };
-          socket.send(JSON.stringify(signupPayload));
-          signupForm.reset();
-        });
-  
-        loginForm.addEventListener("submit", (e) => {
-          e.preventDefault();
-          authErrorDisplay.style.display = "none";
-  
-          const email = document.getElementById("login-email").value;
-          const password = document.getElementById("login-password").value;
-  
-          if (!isValidEmail(email)) {
-            displayAuthError(
-              "Please provide a valid email format",
-              "login_error"
-            );
-            return;
-          }
-          if (!password.trim()) {
-            displayAuthError("Password field is required", "login_error");
-            return;
-          }
-          showLoading();
-          console.log(`Attempting login payload`, {
-            email: email,
-            password: password,
-          });
-          const loginPayload = {
-            action: "login",
-            email: email,
-            password: password,
-          };
-          socket.send(JSON.stringify(loginPayload));
-          loginForm.reset();
-        });
-  
-        forgotPasswordForm.addEventListener("submit", (e) => {
-          e.preventDefault();
-          const forgotEmail = document.getElementById("forgot-email").value;
-          authErrorDisplay.style.display = "none";
-          if (!isValidEmail(forgotEmail)) {
-            displayAuthError(
-              "Please provide a valid email format",
-              "forgot_password_error"
-            );
-            return;
-          }
-  
-          showLoading();
-          console.log("Attempting forgot password request:", {
-            email: forgotEmail,
-          });
-  
-          const forgotPasswordPayload = {
-            action: "forgot_password",
-            email: forgotEmail,
-          };
-          socket.send(JSON.stringify(forgotPasswordPayload));
-          forgotPasswordForm.reset();
-        });
-        resetPasswordForm.addEventListener("submit", (e) => {
-          e.preventDefault();
-          authErrorDisplay.style.display = "none";
-          const newPassword = document.getElementById("reset-password").value;
-          if (!passwordRegex.test(newPassword)) {
-            displayAuthError(
-              "Password must be 8 chars long min, have one uppercase, one lowercase and one special character",
-              "reset_password_error"
-            );
-            return;
-          }
-          const token = getQueryParam("token");
-          showLoading();
-          const resetPasswordPayload = {
-            action: "reset_password",
-            newPassword: newPassword,
-            token: token,
-          };
-  
-          console.log("Reset Payload:", resetPasswordPayload);
-  
-          socket.send(JSON.stringify(resetPasswordPayload));
-          resetPasswordForm.reset();
-        });
-        function addMessageToChat(
-          message,
-          type,
-          isPrepended = false,
-          messageId = null,
-          timestamp = null
-        ) {
-          const messageDiv = document.createElement("div");
-          messageDiv.classList.add("message");
-          if (messageId) {
-            messageDiv.dataset.messageId = messageId;
-          }
-          const messageContent = document.createElement("div");
-          messageContent.classList.add("message-content");
-          const displayTimestamp = timestamp
-            ? moment(timestamp).format("h:mm A")
-            : moment().format("h:mm A");
-          if (type === "user") {
-            messageDiv.classList.add("user-message");
-          } else if (type === "bot") {
-            messageDiv.classList.add("bot-message");
-          } else if (type === "error") {
-            messageDiv.classList.add("bot-message", "error-message");
-          }
-          const messageActions = document.createElement("div");
-          messageActions.classList.add("message-actions");
-  
-          const editButton = document.createElement("button");
-          editButton.innerHTML = '<i class="fas fa-edit"></i>';
-          editButton.addEventListener("click", () =>
-            editMessage(messageDiv, messageContent, message)
+        socket.send(JSON.stringify(signupPayload));
+        signupForm.reset();
+      });
+
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        authErrorDisplay.style.display = "none";
+
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+
+        if (!isValidEmail(email)) {
+          displayAuthError(
+            "Please provide a valid email format",
+            "login_error"
           );
-          messageActions.appendChild(editButton);
-  
-          const deleteButton = document.createElement("button");
-          deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-          deleteButton.addEventListener("click", () => deleteMessage(messageDiv));
-          messageActions.appendChild(deleteButton);
-  
-          if (type === "user") {
-            messageDiv.appendChild(messageActions);
-          }
-  
-          const copyButton = document.createElement("button");
-          copyButton.classList.add("copy-button");
-          copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-          copyButton.addEventListener("click", () =>
-            copyToClipboard(messageContent.innerText)
+          return;
+        }
+        if (!password.trim()) {
+          displayAuthError("Password field is required", "login_error");
+          return;
+        }
+        showLoading();
+        console.log(`Attempting login payload`, {
+          email: email,
+          password: password,
+        });
+        const loginPayload = {
+          action: "login",
+          email: email,
+          password: password,
+        };
+        socket.send(JSON.stringify(loginPayload));
+        loginForm.reset();
+      });
+
+      forgotPasswordForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const forgotEmail = document.getElementById("forgot-email").value;
+        authErrorDisplay.style.display = "none";
+        if (!isValidEmail(forgotEmail)) {
+          displayAuthError(
+            "Please provide a valid email format",
+            "forgot_password_error"
           );
-          messageDiv.appendChild(copyButton);
-          messageContent.innerHTML = message;
-          const editTextArea = document.createElement("textarea");
-          editTextArea.classList.add("edit-textarea");
-          editTextArea.value = message;
-  
-          messageDiv.appendChild(editTextArea);
-          messageContent.querySelectorAll("pre code").forEach((block) => {
-            hljs.highlightBlock(block);
-            const codeCopyButton = document.createElement("button");
-            codeCopyButton.classList.add("copy-button");
-            codeCopyButton.innerHTML = '<i class="fas fa-copy"></i>';
-            codeCopyButton.addEventListener("click", () =>
-              copyCodeToClipboard(block)
-            );
-            block.parentNode.style.position = "relative";
-            block.parentNode.appendChild(codeCopyButton);
-          });
-          const timestampSpan = document.createElement("span");
-          timestampSpan.classList.add("message-timestamp");
-          timestampSpan.textContent = displayTimestamp;
-          messageDiv.appendChild(timestampSpan);
-          messageDiv.appendChild(messageContent);
-  
-          if (isPrepended) {
-            chatMessages.insertBefore(messageDiv, chatMessages.firstChild);
-          } else {
-            chatMessages.appendChild(messageDiv);
-          }
-  
-          if (!isPrepended) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-          }
+          return;
         }
-  
-        function editMessage(messageDiv, messageContent, message) {
-          messageDiv.classList.add("editing");
-          const editTextArea = messageDiv.querySelector(".edit-textarea");
-          const saveButton = document.createElement("button");
-          saveButton.innerHTML = '<i class="fas fa-check"></i>';
-          saveButton.addEventListener("click", () =>
-            saveEdit(messageDiv, messageContent, editTextArea)
+
+        showLoading();
+        console.log("Attempting forgot password request:", {
+          email: forgotEmail,
+        });
+
+        const forgotPasswordPayload = {
+          action: "forgot_password",
+          email: forgotEmail,
+        };
+        socket.send(JSON.stringify(forgotPasswordPayload));
+        forgotPasswordForm.reset();
+      });
+      resetPasswordForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        authErrorDisplay.style.display = "none";
+        const newPassword = document.getElementById("reset-password").value;
+        if (!passwordRegex.test(newPassword)) {
+          displayAuthError(
+            "Password must be 8 chars long min, have one uppercase, one lowercase and one special character",
+            "reset_password_error"
           );
-          messageDiv.querySelector(".message-actions").appendChild(saveButton);
-          editTextArea.style.display = "block";
+          return;
         }
-        function saveEdit(messageDiv, messageContent, editTextArea) {
-          messageDiv.classList.remove("editing");
-          const messageId = messageDiv.dataset.messageId;
-          if (messageId) {
-            socket.send(
-              JSON.stringify({
-                action: "edit_message",
-                messageId: messageId,
-                newMessage: editTextArea.value,
-              })
-            );
-          } else {
-            messageContent.innerHTML = editTextArea.value;
-          }
-          editTextArea.style.display = "none";
-          const saveButton = messageDiv.querySelector(
-            ".message-actions button:last-child"
+        const token = getQueryParam("token");
+        showLoading();
+        const resetPasswordPayload = {
+          action: "reset_password",
+          newPassword: newPassword,
+          token: token,
+        };
+
+        console.log("Reset Payload:", resetPasswordPayload);
+
+        socket.send(JSON.stringify(resetPasswordPayload));
+        resetPasswordForm.reset();
+      });
+
+      function addMessageToChat(
+        message,
+        type,
+        isPrepended = false,
+        messageId = null,
+        timestamp = null,
+        conversationId = null
+      ) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message");
+        if (messageId) {
+          messageDiv.dataset.messageId = messageId;
+        }
+        if (conversationId) {
+          messageDiv.dataset.conversationId = conversationId;
+        }
+        const messageContent = document.createElement("div");
+        messageContent.classList.add("message-content");
+        const displayTimestamp = timestamp
+          ? moment(timestamp).format("h:mm A")
+          : moment().format("h:mm A");
+        if (type === "user") {
+          messageDiv.classList.add("user-message");
+        } else if (type === "bot") {
+          messageDiv.classList.add("bot-message");
+        } else if (type === "error") {
+          messageDiv.classList.add("bot-message", "error-message");
+        }
+        const messageActions = document.createElement("div");
+        messageActions.classList.add("message-actions");
+
+        const editButton = document.createElement("button");
+        editButton.innerHTML = '<i class="fas fa-edit"></i>';
+        editButton.addEventListener("click", () =>
+          editMessage(messageDiv, messageContent, message)
+        );
+        messageActions.appendChild(editButton);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteButton.addEventListener("click", () => deleteMessage(messageDiv));
+        messageActions.appendChild(deleteButton);
+
+        if (type === "user") {
+          messageDiv.appendChild(messageActions);
+        }
+
+        const copyButton = document.createElement("button");
+        copyButton.classList.add("copy-button");
+        copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+        copyButton.addEventListener("click", () =>
+          copyToClipboard(messageContent.innerText)
+        );
+        messageDiv.appendChild(copyButton);
+        messageContent.innerHTML = message;
+        const editTextArea = document.createElement("textarea");
+        editTextArea.classList.add("edit-textarea");
+        editTextArea.value = message;
+
+        messageDiv.appendChild(editTextArea);
+        messageContent.querySelectorAll("pre code").forEach((block) => {
+          hljs.highlightBlock(block);
+          const codeCopyButton = document.createElement("button");
+          codeCopyButton.classList.add("copy-button");
+          codeCopyButton.innerHTML = '<i class="fas fa-copy"></i>';
+          codeCopyButton.addEventListener("click", () =>
+            copyCodeToClipboard(block)
           );
-          saveButton.remove();
-        }
-        function updateMessage(messageId, newMessage) {
-          const messageDiv = chatMessages.querySelector(
-            `[data-message-id="${messageId}"]`
-          );
-          if (messageDiv) {
-            const messageContent = messageDiv.querySelector(".message-content");
-            messageContent.innerHTML = newMessage;
-          }
-        }
-  
-        function deleteMessage(messageDiv) {
-          const messageId = messageDiv.dataset.messageId;
-          if (messageId) {
-            socket.send(
-              JSON.stringify({
-                action: "delete_message",
-                messageId: messageId,
-              })
-            );
-          } else {
-            messageDiv.remove();
-          }
-        }
-        function deleteMessageFromUI(messageId) {
-          const messageDiv = chatMessages.querySelector(
-            `[data-message-id="${messageId}"]`
-          );
-          if (messageDiv) {
-            messageDiv.remove();
-          }
-        }
-  
-        function showLoading() {
-          loadingOverlay.style.display = "flex";
-        }
-  
-        function hideLoading() {
-          loadingOverlay.style.display = "none";
-        }
-  
-        function showTypingIndicator() {
-          typingIndicator.style.display = "block";
-        }
-        function hideTypingIndicator() {
-          typingIndicator.style.display = "none";
-        }
-        function showLoadingPreviousMessages() {
-          loadingPreviousMessages.style.display = "flex";
-        }
-        function hideLoadingPreviousMessages() {
-          loadingPreviousMessages.style.display = "none";
-        }
-  
-        function displayAuthError(message, errorType) {
-          let detailedMessage = message;
-          if (errorType === "signup_error") {
-            detailedMessage = message;
-          } else if (errorType === "login_error") {
-            detailedMessage = message;
-          }
-          authErrorDisplay.textContent = detailedMessage;
-          authErrorDisplay.style.display = "block";
-  
-          setTimeout(() => {
-            authErrorDisplay.style.display = "none";
-          }, 5000);
-        }
-  
-        function displayAuthMessage(message) {
-          authErrorDisplay.textContent = message;
-          authErrorDisplay.style.display = "block";
-  
-          setTimeout(() => {
-            authErrorDisplay.style.display = "none";
-          }, 5000);
-        }
-        function displayError(message, errorType) {
-          let detailedMessage = message;
-          if (errorType === "input_validation") {
-            detailedMessage = "Please enter a valid message.";
-          } else if (errorType === "session_error") {
-            detailedMessage = "Chat session error. Please refresh the page.";
-          } else if (errorType === "internal_error") {
-            detailedMessage = "An internal server error occurred.";
-          } else if (errorType === "message_format") {
-            detailedMessage = "The message format was invalid.";
-          } else if (errorType === "websocket_error") {
-            detailedMessage = "Error connecting to the chatbot server.";
-          } else if (errorType === "websocket_closed") {
-            detailedMessage = message;
-          }
-          errorDisplay.innerHTML = `<div class='error-message'>${detailedMessage}</div>`;
-          setTimeout(() => {
-            errorDisplay.innerHTML = "";
-          }, 5000);
-        }
-  
-        function toggleButtonLoading(isLoading) {
-          if (isLoading) {
-            sendButton.classList.add("loading");
-            sendButton.disabled = true;
-            document.getElementById("send-text").style.display = "none";
-            chatInput.style.height = "auto";
-          } else {
-            sendButton.classList.remove("loading");
-            sendButton.disabled = false;
-            document.getElementById("send-text").style.display = "block";
-            chatInput.style.height = "auto";
-          }
-        }
-        async function copyCodeToClipboard(codeBlock) {
-          try {
-            await navigator.clipboard.writeText(codeBlock.textContent);
-            console.log("Code copied to clipboard!");
-          } catch (err) {
-            console.error("Failed to copy code: ", err);
-          }
-        }
-  
-        async function copyToClipboard(text) {
-          try {
-            await navigator.clipboard.writeText(text);
-            console.log("Message copied to clipboard!");
-          } catch (err) {
-            console.error("Failed to copy message: ", err);
-          }
-        }
-        toggleLoginLink.addEventListener("click", (e) => {
-          e.preventDefault();
-          signupFormDiv.style.display = "none";
-          loginFormDiv.style.display = "flex";
-          forgotPasswordDiv.style.display = "none";
-          resetPasswordDiv.style.display = "none";
+          block.parentNode.style.position = "relative";
+          block.parentNode.appendChild(codeCopyButton);
         });
-        toggleSignupLink.addEventListener("click", (e) => {
-          e.preventDefault();
-          signupFormDiv.style.display = "flex";
-          loginFormDiv.style.display = "none";
-          forgotPasswordDiv.style.display = "none";
-          resetPasswordDiv.style.display = "none";
-        });
-        forgotPasswordLink.addEventListener("click", (e) => {
-          e.preventDefault();
-          signupFormDiv.style.display = "none";
-          loginFormDiv.style.display = "none";
-          forgotPasswordDiv.style.display = "flex";
-          resetPasswordDiv.style.display = "none";
-        });
-        toggleLoginFromForgot.addEventListener("click", (e) => {
-          e.preventDefault();
-          signupFormDiv.style.display = "none";
-          loginFormDiv.style.display = "flex";
-          forgotPasswordDiv.style.display = "none";
-          resetPasswordDiv.style.display = "none";
-        });
-  
-        chatForm.addEventListener("submit", (e) => {
-          e.preventDefault();
-          const message = chatInput.value.trim();
-          if (message) {
-            const payload = { action: "send_message", message: message };
-            console.log("Sending message payload:", payload);
-            socket.send(JSON.stringify(payload));
-            addMessageToChat(message, "user");
-            chatInput.value = "";
-            toggleButtonLoading(true);
-          }
-        });
-  
-        clearInputButton.addEventListener("click", () => {
-          chatInput.value = "";
-          chatInput.focus();
-        });
-  
-        newChatButton.addEventListener("click", () => {
-          chatMessages.innerHTML = "";
-        });
-  
-        scrollDownButton.addEventListener("click", () => {
+        const timestampSpan = document.createElement("span");
+        timestampSpan.classList.add("message-timestamp");
+        timestampSpan.textContent = displayTimestamp;
+        messageDiv.appendChild(timestampSpan);
+        messageDiv.appendChild(messageContent);
+
+        if (isPrepended) {
+          chatMessages.insertBefore(messageDiv, chatMessages.firstChild);
+        } else {
+          chatMessages.appendChild(messageDiv);
+        }
+
+        if (!isPrepended) {
           chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
-  
-        chatMessages.addEventListener("scroll", () => {
-          if (
-            chatMessages.scrollHeight -
-              chatMessages.scrollTop -
-              chatMessages.clientHeight >
-            20
-          ) {
-            scrollDownButton.classList.add("show");
-          } else {
-            scrollDownButton.classList.remove("show");
-          }
-        });
-  
-        loadPreviousButton.addEventListener("click", () => {
-          const currentFirstMessage = chatMessages.firstChild;
-          showLoadingPreviousMessages();
-          socket.send(JSON.stringify({ action: "load_previous_messages" }));
-        });
-          logoutButton.addEventListener("click", () => {
-              //Remove the auth token from localstorage
-              localStorage.removeItem("authToken");
-              authToken = null;
-  
-              //Hide the chat app and display the auth container
-              chatApp.style.display = "none";
-               authContainer.style.display = "flex";
-  
-              // Clear any displayed error
-              authErrorDisplay.style.display = "none";
-              errorDisplay.innerHTML = "";
-  
-              // Clear chat messages
-              chatMessages.innerHTML = "";
-  
-               // Terminate the websocket connection if open
-             if (socket && socket.readyState === WebSocket.OPEN) {
-               socket.send(JSON.stringify({ action: "logout" })); // Inform the server for clean up
-             }
+        }
+      }
+
+      function editMessage(messageDiv, messageContent, message) {
+        messageDiv.classList.add("editing");
+        const editTextArea = messageDiv.querySelector(".edit-textarea");
+        const saveButton = document.createElement("button");
+        saveButton.innerHTML = '<i class="fas fa-check"></i>';
+        saveButton.addEventListener("click", () =>
+          saveEdit(messageDiv, messageContent, editTextArea)
+        );
+        messageDiv.querySelector(".message-actions").appendChild(saveButton);
+        editTextArea.style.display = "block";
+      }
+      function saveEdit(messageDiv, messageContent, editTextArea) {
+        messageDiv.classList.remove("editing");
+        const messageId = messageDiv.dataset.messageId;
+        if (messageId) {
+          socket.send(
+            JSON.stringify({
+              action: "edit_message",
+              messageId: messageId,
+              newMessage: editTextArea.value,
+            })
+          );
+        } else {
+          messageContent.innerHTML = editTextArea.value;
+        }
+        editTextArea.style.display = "none";
+        const saveButton = messageDiv.querySelector(
+          ".message-actions button:last-child"
+        );
+        saveButton.remove();
+      }
+      function updateMessage(messageId, newMessage) {
+        const messageDiv = chatMessages.querySelector(
+          `[data-message-id="${messageId}"]`
+        );
+        if (messageDiv) {
+          const messageContent = messageDiv.querySelector(".message-content");
+          messageContent.innerHTML = newMessage;
+        }
+      }
+
+      function deleteMessage(messageDiv) {
+        const messageId = messageDiv.dataset.messageId;
+        if (messageId) {
+          socket.send(
+            JSON.stringify({
+              action: "delete_message",
+              messageId: messageId,
+            })
+          );
+        } else {
+          messageDiv.remove();
+        }
+      }
+      function deleteMessageFromUI(messageId) {
+        const messageDiv = chatMessages.querySelector(
+          `[data-message-id="${messageId}"]`
+        );
+        if (messageDiv) {
+          messageDiv.remove();
+        }
+      }
+
+      function showLoading() {
+        loadingOverlay.style.display = "flex";
+      }
+
+      function hideLoading() {
+        loadingOverlay.style.display = "none";
+      }
+      function showTypingIndicator() {
+        typingIndicator.style.display = "block";
+      }
+      function hideTypingIndicator() {
+        typingIndicator.style.display = "none";
+      }
+      function showLoadingPreviousMessages() {
+        loadingPreviousMessages.style.display = "flex";
+      }
+      function hideLoadingPreviousMessages() {
+        loadingPreviousMessages.style.display = "none";
+      }
+
+      function displayAuthError(message, errorType) {
+        let detailedMessage = message;
+        if (errorType === "signup_error") {
+          detailedMessage = message;
+        } else if (errorType === "login_error") {
+          detailedMessage = message;
+        }
+        authErrorDisplay.textContent = detailedMessage;
+        authErrorDisplay.style.display = "block";
+
+        setTimeout(() => {
+          authErrorDisplay.style.display = "none";
+        }, 5000);
+      }
+
+      function displayAuthMessage(message) {
+        authErrorDisplay.textContent = message;
+        authErrorDisplay.style.display = "block";
+
+        setTimeout(() => {
+          authErrorDisplay.style.display = "none";
+        }, 5000);
+      }
+      function displayError(message, errorType) {
+        let detailedMessage = message;
+        if (errorType === "input_validation") {
+          detailedMessage = "Please enter a valid message.";
+        } else if (errorType === "session_error") {
+          detailedMessage = "Chat session error. Please refresh the page.";
+        } else if (errorType === "internal_error") {
+          detailedMessage = "An internal server error occurred.";
+        } else if (errorType === "message_format") {
+          detailedMessage = "The message format was invalid.";
+        } else if (errorType === "websocket_error") {
+          detailedMessage = "Error connecting to the chatbot server.";
+        } else if (errorType === "websocket_closed") {
+          detailedMessage = message;
+        }
+        errorDisplay.innerHTML = `<div class='error-message'>${detailedMessage}</div>`;
+        setTimeout(() => {
+          errorDisplay.innerHTML = "";
+        }, 5000);
+      }
+
+      function toggleButtonLoading(isLoading) {
+        if (isLoading) {
+          sendButton.classList.add("loading");
+          sendButton.disabled = true;
+          document.getElementById("send-text").style.display = "none";
+          chatInput.style.height = "auto";
+        } else {
+          sendButton.classList.remove("loading");
+          sendButton.disabled = false;
+          document.getElementById("send-text").style.display = "block";
+          chatInput.style.height = "auto";
+        }
+      }
+      async function copyCodeToClipboard(codeBlock) {
+        try {
+          await navigator.clipboard.writeText(codeBlock.textContent);
+          console.log("Code copied to clipboard!");
+        } catch (err) {
+          console.error("Failed to copy code: ", err);
+        }
+      }
+
+      async function copyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          console.log("Message copied to clipboard!");
+        } catch (err) {
+          console.error("Failed to copy message: ", err);
+        }
+      }
+      toggleLoginLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        signupFormDiv.style.display = "none";
+        loginFormDiv.style.display = "flex";
+        forgotPasswordDiv.style.display = "none";
+        resetPasswordDiv.style.display = "none";
+      });
+      toggleSignupLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        signupFormDiv.style.display = "flex";
+        loginFormDiv.style.display = "none";
+        forgotPasswordDiv.style.display = "none";
+        resetPasswordDiv.style.display = "none";
+      });
+      forgotPasswordLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        signupFormDiv.style.display = "none";
+        loginFormDiv.style.display = "none";
+        forgotPasswordDiv.style.display = "flex";
+        resetPasswordDiv.style.display = "none";
+      });
+      toggleLoginFromForgot.addEventListener("click", (e) => {
+        e.preventDefault();
+        signupFormDiv.style.display = "none";
+        loginFormDiv.style.display = "flex";
+        forgotPasswordDiv.style.display = "none";
+        resetPasswordDiv.style.display = "none";
+      });
+
+      chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        if (message) {
+          const payload = { action: "send_message", message: message };
+          console.log("Sending message payload:", payload);
+          socket.send(JSON.stringify(payload));
+          addMessageToChat(
+            message,
+            "user",
+            false,
+            null,
+            null,
+            selectedConversationId
+          );
+          chatInput.value = "";
+          toggleButtonLoading(true);
+        }
+      });
+
+      clearInputButton.addEventListener("click", () => {
+        chatInput.value = "";
+        chatInput.focus();
+      });
+
+      newChatButton.addEventListener("click", () => {
+        socket.send(JSON.stringify({ action: "new_chat" }));
+        chatMessages.innerHTML = "";
+      });
+
+      scrollDownButton.addEventListener("click", () => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+
+      chatMessages.addEventListener("scroll", () => {
+        if (
+          chatMessages.scrollHeight -
+            chatMessages.scrollTop -
+            chatMessages.clientHeight >
+          20
+        ) {
+          scrollDownButton.classList.add("show");
+        } else {
+          scrollDownButton.classList.remove("show");
+        }
+      });
+      loadConversationsButton.addEventListener("click", () => {
+        conversationListContainer.classList.add("show");
+        socket.send(JSON.stringify({ action: "load_previous_conversations" }));
+      });
+
+      function displayConversationList(conversations) {
+        conversationList.innerHTML = ""; // Clear previous list
+        conversations.forEach((conversation) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = `Conversation ID: ${
+            conversation.id
+          }, Started: ${moment(conversation.startTime).format(
+            "MMMM Do YYYY, h:mm:ss a"
+          )}`;
+          listItem.addEventListener("click", () => {
+            loadConversation(conversation.id);
+            conversationListContainer.classList.remove("show");
           });
-      </script>
+          conversationList.appendChild(listItem);
+        });
+      }
+      function loadConversation(conversationId) {
+        console.log("loading conversation", conversationId);
+        showLoadingPreviousMessages();
+        socket.send(
+          JSON.stringify({
+            action: "load_conversation",
+            conversationId: conversationId,
+          })
+        );
+      }
+      logoutButton.addEventListener("click", () => {
+        //Remove the auth token from localstorage
+        localStorage.removeItem("authToken");
+        authToken = null;
+
+        //Hide the chat app and display the auth container
+        chatApp.style.display = "none";
+        authContainer.style.display = "flex";
+
+        // Clear any displayed error
+        authErrorDisplay.style.display = "none";
+        errorDisplay.innerHTML = "";
+
+        // Clear chat messages
+        chatMessages.innerHTML = "";
+
+        // Terminate the websocket connection if open
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ action: "logout" })); // Inform the server for clean up
+        }
+      });
+    </script>
   </body>
 </html>
