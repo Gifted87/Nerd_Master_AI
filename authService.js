@@ -120,7 +120,7 @@ async function verifyEmail(pool, token) {
          const [users] = await conn.execute('SELECT * FROM users WHERE LOWER(verificationToken) = LOWER(?)', [token.trim()]);
          if (users.length === 0) {
             conn.release();
-            console.log("Verification Failed: Token not found in database:", token,  "Database Token:", user.verificationToken); // Added log
+            // console.log("Verification Failed: Token not found in database:", token,  "Database Token:", user.verificationToken); // Added log
             return { error: 'Invalid token, user cannot be verified' };
         }
          const user = users[0];
