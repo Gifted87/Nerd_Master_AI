@@ -35,7 +35,7 @@
     <div class="app-container hidden" id="chat-app">
       <aside class="sidebar" id="chat-sidebar">
         <div class="sidebar__header">
-          <h2 class="sidebar__site-title">School Bot</h2>
+          <h2 class="sidebar__site-title">Conversations</h2>
         </div>
         <nav class="sidebar__nav">
           <ul class="sidebar__conversation-list" id="conversation-list">
@@ -52,7 +52,7 @@
           >
             <i class="fas fa-bars"></i>
           </button>
-          <h1 class="chat-header__title">Chat</h1>
+          <h1 class="chat-header__title">Gee-Pee</h1>
           <div class="sidebar__actions">
             <button
               class="sidebar__button"
@@ -293,7 +293,7 @@
       const loadConversationsButton = document.getElementById(
         "load-conversations-button"
       );
-      
+
       const conversationList = document.getElementById("conversation-list");
       const loadingPreviousMessages = document.getElementById(
         "loading-previous-messages"
@@ -890,9 +890,15 @@
         conversationList.innerHTML = "";
         conversations.forEach((conversation) => {
           const listItem = document.createElement("li");
-          listItem.textContent = `Conversation ${moment(
-            conversation.startTime
-          ).format("MMM DD, h:mm A")}`;
+          const conversationName =
+            conversation.name ||
+            `Conversation ${moment(conversation.startTime).format(
+              "MMM DD, h:mm A"
+            )}`;
+          listItem.textContent =
+            conversationName.length > 19
+              ? conversationName.substring(0, 19) + "..."
+              : conversationName;
           listItem.addEventListener("click", () => {
             loadConversation(conversation.id);
             // Remove selection from other list items
