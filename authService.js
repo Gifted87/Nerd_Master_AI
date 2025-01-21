@@ -29,7 +29,7 @@ async function signupUser(pool, username, email, password) {
         return { userId: result.insertId, user: { username: username, email: email } };
     } catch (error) {
         console.error('Error signing up user:', error);
-        return { error: "Error during signup, please try again later" };
+        return { error: "Error during signup, try using a different username and try again later"};
     }
 }
 

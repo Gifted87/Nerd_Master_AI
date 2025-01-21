@@ -30,7 +30,7 @@ const handleAction = async (ws, pool, data) => {
             // Automatically log in the user after successful signup
             const loginResult = await authService.loginUser(pool, email, password);
             if (loginResult.error) {
-                sendError(ws, "Signup successful, but error during automatic login. Please log in.", 'login_error');
+                sendError(ws, "Signup successful, but error during automatic login. Please verify your email and try logging in manually .", 'login_error');
                 return;
             }
             const loggedInUserId = loginResult.userId;
