@@ -39,6 +39,18 @@
         </div>
         <nav class="sidebar__nav">
           <ul class="sidebar__conversation-list" id="conversation-list">
+            <li
+              id="empty-conversation-list-message"
+              class="hidden"
+              style="
+                text-align: center;
+                color: var(--text-secondary);
+                font-style: italic;
+                padding: 0.5rem;
+              "
+            >
+              Nothing here yet
+            </li>
             <!-- Conversation list items will be loaded here -->
           </ul>
         </nav>
@@ -52,7 +64,7 @@
           >
             <i class="fas fa-bars"></i>
           </button>
-          <h1 class="chat-header__title">Gee-Pee</h1>
+          <h1 class="chat-header__title">Gorilla Brain</h1>
           <div class="sidebar__actions">
             <button
               class="sidebar__button"
@@ -81,6 +93,10 @@
           </div>
         </header>
         <section class="chat-messages" id="chat-messages">
+          <div class="initial-message" id="initial-chat-message">
+            <p>Welcome to Gee-Pee AI Chat!</p>
+            <p>Start a new conversation or load previous ones from the menu.</p>
+          </div>
           <div class="typing-indicator hidden" id="typing-indicator">
             Bot is typing...
           </div>
@@ -273,6 +289,7 @@
       const loginForm = document.getElementById("login-form");
       const signupFormDiv = document.getElementById("signup-form-div");
       const loginFormDiv = document.getElementById("login-form-div");
+      const initialChatMessage = document.getElementById("initial-chat-message");
 
       const forgotPasswordDiv = document.getElementById("forgot-password-div");
       const forgotPasswordForm = document.getElementById(
@@ -324,7 +341,13 @@
           console.log("Sending stored auth token:", authToken);
           socket.send(JSON.stringify({ userId: authToken }));
           authContainer.classList.add("hidden");
-          chatApp.classList.remove("hidden");
+          socket.send(JSON.stringify({ action: "new_chat" }));
+          chatMessages.innerHTML = "";
+          selectedConversationId = null;
+          // Remove selection from previous conversations in the sidebar
+          document
+            .querySelectorAll("#conversation-list li")
+            .forEach((li) => li.classList.remove("selected"));
           // Load conversations immediately
           if (window.innerWidth > 768) {
             socket.send(
@@ -385,7 +408,15 @@
             chatMessages.innerHTML = "";
             hideLoading();
             toggleButtonLoading(false);
-          } else if (messageType === "bot") {
+          }else if (messageType === "old_chat_success") {
+            console.log("new chat success conversation id", conversationId);
+            selectedConversationId = conversationId;
+            // chatMessages.innerHTML = "";
+            hideLoading();
+            toggleButtonLoading(false);
+          }  
+          
+          else if (messageType === "bot") {
             addMessageToChat(
               messageContent,
               "bot",
@@ -870,7 +901,8 @@
 
       newChatButton.addEventListener("click", () => {
         socket.send(JSON.stringify({ action: "new_chat" }));
-        chatMessages.innerHTML = "";
+        // chatMessages.innerHTML = "";
+        initialChatMessage.classList.remove("hidden");
         selectedConversationId = null;
         // Remove selection from previous conversations in the sidebar
         document
