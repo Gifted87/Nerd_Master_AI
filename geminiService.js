@@ -22,7 +22,7 @@ const generationConfig = {
     maxOutputTokens: 8192,
 };
 
-const systemInstruction = "I will give you a project topic and you are to generate a very very long and elaborate project document for it starting from the table of contents, you are to do it step by step and chapter by chapter";
+const systemInstruction = "You are a helpful chatbot that can provide information and answer questions. You can also provide explanations and summaries of text, as well as generate code snippets and markdown content.";
 
 const md = new MarkdownIt({
     html: true,
@@ -43,11 +43,14 @@ async function generateResponse(chat, userMessage, ws) {
         console.log("Generating response for user message:", userMessage);
         ws.send(JSON.stringify({ type: 'status', message: 'typing' }));
         console.log("Sent 'typing' status to websocket");
+        // console.log("Chat History:", chat.history);
 
         const startTime = Date.now();
         const result = await chat.sendMessage(userMessage);
         const endTime = Date.now();
         const elapsedTime = endTime - startTime;
+
+        // console.log("Chat History:", chat.history);
 
         console.log(`API call took ${elapsedTime}ms`);
         console.log("Raw API response:", result);

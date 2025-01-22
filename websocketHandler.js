@@ -1,6 +1,8 @@
 const sessionManager = require("./sessionManager");
 const geminiService = require("./geminiService");
 const authService = require("./authService");
+// const { logSocketToSession } = sessionManager;
+// const logSocketToSession = require("./sessionManager")
 
 function sendError(ws, message, errorType = "general") {
   ws.send(
@@ -24,7 +26,10 @@ const handleAuthenticatedConnection = async (ws, pool, userId) => {
   );
   ws.send(JSON.stringify({ type: "connection_success", userId: userId }));
   setupMessageHandling(ws, pool, userId, clientAddress);
+  //   console.log("logSocketToSession:",sessionManager.logSocketToSession());
 };
+
+let oldConversation = [];
 
 const handleAction = async (ws, pool, data) => {
   const clientAddress = ws._socket.remoteAddress + ":" + ws._socket.remotePort;
@@ -201,9 +206,16 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         sessionManager.deleteSessionByUserId(userId);
       } else if (action === "new_chat") {
         //save current conversation on new chat
+        console.log(`new chat request received from ${clientAddress}`);
+
+        sessionManager.setCurrentConversationIdBySocket(ws, null);
+
         const currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
         const currentChat = sessionManager.getChatHistoryBySocket(ws);
+
+        console.log(`current conversation id: ${currentConversationId}`);
+        console.log(`current Chat: ${currentChat.history}`);
 
         if (
           currentConversationId &&
@@ -228,21 +240,37 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         ws.send(
           JSON.stringify({ type: "new_chat_success", conversationId: null })
         );
-      } else if (action === "send_message") {
+      } else if (action === "continue_conversation") {
         const userMessage = data.message?.trim();
+
         if (!userMessage) {
           sendError(ws, "No message provided", "input_validation");
           return;
         }
         let currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
+
+        console.log(
+          `send_message get current conversation id: ${currentConversationId}`
+        );
+
+        let chat = oldConversation;
+
         if (!currentConversationId) {
           console.log(`creating new conversation for user id ${userId}`);
-          currentConversationId = await createNewConversation(pool, userId);
+          currentConversationId = await createNewConversation(
+            pool,
+            userId,
+            userMessage
+          );
           sessionManager.setCurrentConversationIdBySocket(
             ws,
             currentConversationId
           );
+          console.log(`chat: `, chat);
+          //  chat.params.history = [];
+          //   chat._history = [];
+          console.log(`new chat: `, chat);
           ws.send(
             JSON.stringify({
               type: "old_chat_success",
@@ -250,8 +278,95 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             })
           );
         }
+        // chat = sessionManager.getChatHistoryBySocket(ws);
+        if (!chat) {
+          console.error(`Chat history not found for ${clientAddress}`);
+          sendError(ws, "Chat session error.", "session_error");
+          return;
+        }
+        try {
+          const botResponse = await geminiService.generateResponse(
+            chat,
+            userMessage,
+            ws
+          );
+          const htmlResponse = geminiService.md.render(botResponse);
+          const timestamp = Date.now();
 
-        const chat = sessionManager.getChatHistoryBySocket(ws);
+          const messageToSaveUser = {
+            userId: userId,
+            type: "user",
+            message: userMessage,
+            timestamp: timestamp,
+            conversationId: currentConversationId,
+          };
+          await saveMessage(pool, messageToSaveUser);
+
+          const messageToSaveBot = {
+            userId: userId,
+            type: "bot",
+            message: htmlResponse,
+            timestamp: timestamp,
+            conversationId: currentConversationId,
+          };
+          await saveMessage(pool, messageToSaveBot);
+
+          ws.send(
+            JSON.stringify({
+              type: "bot",
+              message: htmlResponse,
+              conversationId: currentConversationId,
+            })
+          );
+        } catch (error) {
+          console.error("Error processing message:", error);
+          sendError(
+            ws,
+            "An error occurred while processing your request.",
+            "internal_error"
+          );
+        }
+      } else if (action === "send_message") {
+        const userMessage = data.message?.trim();
+
+        if (!userMessage) {
+          sendError(ws, "No message provided", "input_validation");
+          return;
+        }
+        let currentConversationId =
+          sessionManager.getCurrentConversationIdBySocket(ws);
+
+        console.log(
+          `send_message get current conversation id:`,
+          currentConversationId
+        );
+
+        //   console.log(`Old session data:`, oldConversation);
+
+        let chat = sessionManager.getChatHistoryBySocket(ws);
+        if (!currentConversationId) {
+          console.log(`creating new conversation for user id ${userId}`);
+          currentConversationId = await createNewConversation(
+            pool,
+            userId,
+            userMessage
+          );
+          sessionManager.setCurrentConversationIdBySocket(
+            ws,
+            currentConversationId
+          );
+          console.log(`chat: `, chat);
+          //  chat.params.history = [];
+          chat._history = [];
+          console.log(`new chat: `, chat);
+          ws.send(
+            JSON.stringify({
+              type: "old_chat_success",
+              conversationId: currentConversationId,
+            })
+          );
+        }
+        // chat = sessionManager.getChatHistoryBySocket(ws);
         if (!chat) {
           console.error(`Chat history not found for ${clientAddress}`);
           sendError(ws, "Chat session error.", "session_error");
@@ -319,7 +434,11 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
       } else if (action === "load_conversation") {
         try {
           const conversationId = data.conversationId;
-          const messages = await loadConversationMessages(pool, conversationId);
+          const messages = await loadConversationMessages(
+            pool,
+            conversationId,
+            ws
+          );
           ws.send(
             JSON.stringify({
               type: "conversation_messages",
@@ -407,12 +526,13 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
     sessionManager.deleteSessionBySocket(ws);
   });
 };
-async function createNewConversation(pool, userId) {
+async function createNewConversation(pool, userId, name) {
+  const db_name = name.substring(0, 25);
   try {
     const conn = await pool.getConnection();
     const [result] = await conn.execute(
-      "INSERT INTO conversations (userId) VALUES (?)",
-      [userId]
+      "INSERT INTO conversations (userId, name) VALUES (?, ?)",
+      [userId, db_name]
     );
     conn.release();
     return result.insertId;
@@ -421,7 +541,6 @@ async function createNewConversation(pool, userId) {
     throw err;
   }
 }
-
 async function saveMessage(pool, message) {
   if (!message || !message.message || !message.message.trim()) {
     console.warn("Skipping empty message:", message);
@@ -482,13 +601,14 @@ async function loadPreviousConversations(pool, userId) {
   try {
     const conn = await pool.getConnection();
     const [rows] = await conn.execute(
-      "SELECT id, startTime FROM conversations WHERE userId = ? ORDER BY startTime DESC",
+      "SELECT id, startTime, name FROM conversations WHERE userId = ? ORDER BY startTime DESC",
       [userId]
     );
     conn.release();
     return rows.map((row) => ({
       id: row.id,
       startTime: row.startTime,
+      name: row.name,
     }));
   } catch (err) {
     console.error("Error loading previous conversations:", err);
@@ -496,19 +616,43 @@ async function loadPreviousConversations(pool, userId) {
   }
 }
 
-async function loadConversationMessages(pool, conversationId) {
+async function loadConversationMessages(pool, conversationId, ws) {
   try {
     const conn = await pool.getConnection();
     const [rows] = await conn.execute(
-      "SELECT id, type, message, timestamp FROM messages WHERE conversationId = ? ORDER BY timestamp ASC",
+      "SELECT type, message FROM messages WHERE conversationId = ? ORDER BY timestamp ASC",
       [conversationId]
     );
     conn.release();
+
+    const formattedHistory = rows.map((row) => ({
+      role: row.type === "bot" ? "model" : row.type,
+      parts: [{ text: row.message }],
+    }));
+
+    console.log("formattedHistory:", formattedHistory)
+
+    socketToSession = sessionManager.logSocketToSession();
+    console.log("socketToSession:", socketToSession);
+
+    if (socketToSession.has(ws)) {
+      const { clientAddress, chatHistory } = socketToSession.get(ws);
+      if (chatHistory) {
+        chatHistory.history = formattedHistory;
+        chatHistory._history =formattedHistory;
+        oldConversation = chatHistory;
+        sessionManager.setCurrentConversationIdBySocket(
+          ws,
+          conversationId
+        );
+        console.log("Loaded old Conversation ID:", conversationId);
+        console.log("New History:", chatHistory.history);
+      }
+    }
+
     return rows.map((row) => ({
-      id: row.id,
       type: row.type,
       message: row.message,
-      timestamp: row.timestamp,
     }));
   } catch (err) {
     console.error("Error loading conversation messages:", err);

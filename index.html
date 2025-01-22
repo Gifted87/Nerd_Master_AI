@@ -64,7 +64,7 @@
           >
             <i class="fas fa-bars"></i>
           </button>
-          <h1 class="chat-header__title">Gorilla Brain</h1>
+          <h1 class="chat-header__title"><i class="fas fa-flash"></i> Result Spice</h1>
           <div class="sidebar__actions">
             <button
               class="sidebar__button"
@@ -284,12 +284,15 @@
       const logoutButton = document.getElementById("logout-button");
       const sidebar = document.getElementById("chat-sidebar");
       const sidebarToggle = document.getElementById("sidebar-toggle");
+      let oldChat = false;
 
       const signupForm = document.getElementById("signup-form");
       const loginForm = document.getElementById("login-form");
       const signupFormDiv = document.getElementById("signup-form-div");
       const loginFormDiv = document.getElementById("login-form-div");
-      const initialChatMessage = document.getElementById("initial-chat-message");
+      const initialChatMessage = document.getElementById(
+        "initial-chat-message"
+      );
 
       const forgotPasswordDiv = document.getElementById("forgot-password-div");
       const forgotPasswordForm = document.getElementById(
@@ -404,19 +407,21 @@
             showTypingIndicator();
           } else if (messageType === "new_chat_success") {
             console.log("new chat success conversation id", conversationId);
+            oldChat = false;
             selectedConversationId = conversationId;
             chatMessages.innerHTML = "";
             hideLoading();
             toggleButtonLoading(false);
-          }else if (messageType === "old_chat_success") {
+          } else if (messageType === "old_chat_success") {
             console.log("new chat success conversation id", conversationId);
             selectedConversationId = conversationId;
+            sendButton.innerHTML = isLoading
+              ? '<div class="loading-spinner"></div>'
+              : 'Send <i class="fas fa-paper-plane"></i>';
             // chatMessages.innerHTML = "";
             hideLoading();
             toggleButtonLoading(false);
-          }  
-          
-          else if (messageType === "bot") {
+          } else if (messageType === "bot") {
             addMessageToChat(
               messageContent,
               "bot",
@@ -432,10 +437,12 @@
             displayConversationList(responseData.conversations);
             hideLoading();
             toggleButtonLoading(false);
+            console.log(oldChat);
           } else if (messageType === "conversation_messages") {
             hideLoading();
             chatMessages.innerHTML = "";
             selectedConversationId = responseData.conversationId;
+            oldChat = true;
             if (responseData.messages) {
               responseData.messages.forEach((msg) => {
                 addMessageToChat(
@@ -882,8 +889,27 @@
       chatForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const message = chatInput.value.trim();
-        if (message) {
+        if (message && oldChat===false) {
           const payload = { action: "send_message", message: message };
+          console.log("Sending message payload:", payload);
+          socket.send(JSON.stringify(payload));
+          addMessageToChat(
+            message,
+            "user",
+            false,
+            null,
+            null,
+            selectedConversationId
+          );
+          chatInput.value = "";
+          toggleButtonLoading(true);
+        } else {
+          console.log(oldChat);
+          const payload = {
+            action: "continue_conversation",
+            message: message,
+            conversationId: selectedConversationId,
+          };
           console.log("Sending message payload:", payload);
           socket.send(JSON.stringify(payload));
           addMessageToChat(

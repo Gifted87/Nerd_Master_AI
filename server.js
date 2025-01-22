@@ -50,14 +50,15 @@ async function connectDB() {
         `);
 
         // Create conversations table
-       await connection.execute(`
-            CREATE TABLE IF NOT EXISTS conversations (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                userId INT NOT NULL,
-                startTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (userId) REFERENCES users(id)
-            )
-        `);
+      await connection.execute(`
+         CREATE TABLE IF NOT EXISTS conversations (
+             id INT AUTO_INCREMENT PRIMARY KEY,
+             userId INT NOT NULL,
+             name VARCHAR(255),
+             startTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+             FOREIGN KEY (userId) REFERENCES users(id)
+         )
+     `);
 
          // Create messages table with conversationId
         await connection.execute(`
