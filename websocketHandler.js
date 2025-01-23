@@ -583,7 +583,13 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
 };
 async function createNewConversation(pool, userId, name) {
   // ... (createNewConversation function - no changes) ...
-  const db_name = name.substring(0, 25);
+  let input = name.toString().substring(0, 50);  
+  if (input.includes("-")) {
+        const parts = input.split("-", 2); // Split into two parts
+        input = parts[1].trim(); // Grab text after hyphen and trim
+    }
+
+  const db_name = input;
   try {
     const conn = await pool.getConnection();
     const [result] = await conn.execute(
