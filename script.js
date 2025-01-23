@@ -428,6 +428,49 @@ function stripMarkdown(htmlContent) {
     .replace(/<[^>]*>?/gm, ""); // remove any remaining HTML tags
 }
 
+function createCodeCopyButton(codeElement) {
+  const button = document.createElement("button");
+  button.className = "code-copy-btn";
+  button.innerHTML = '<i class="far fa-copy"></i>';
+  button.title = "Copy code";
+
+  button.addEventListener("click", () => {
+    try {
+      const codeText = codeElement.innerText;
+
+      // Create temporary textarea
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = codeText;
+      tempTextArea.style.position = "absolute";
+      tempTextArea.style.left = "-9999px";
+      tempTextArea.style.top = "-9999px";
+      document.body.appendChild(tempTextArea);
+
+      // Select and copy
+      tempTextArea.select();
+      document.execCommand("copy");
+
+      // Cleanup
+      document.body.removeChild(tempTextArea);
+
+      // Visual feedback
+      button.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(() => {
+        button.innerHTML = '<i class="far fa-copy"></i>';
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy code:", err);
+      button.innerHTML = '<i class="fas fa-times"></i>';
+      setTimeout(() => {
+        button.innerHTML = '<i class="far fa-copy"></i>';
+      }, 2000);
+      displayError("Failed to copy to clipboard", "copy_error");
+    }
+  });
+
+  return button;
+}
+
 function addMessageToChat(
   message,
   type,
@@ -458,6 +501,14 @@ function addMessageToChat(
   } else {
     actionButtons.classList.add("hidden");
   }
+
+  messageContentDiv.querySelectorAll("pre code").forEach((codeBlock) => {
+    const pre = codeBlock.closest("pre");
+    const copyBtn = createCodeCopyButton(codeBlock);
+    pre.style.position = "relative";
+    pre.appendChild(copyBtn);
+    hljs.highlightBlock(codeBlock);
+  });
 
   const timestampSpan = document.createElement("span");
   timestampSpan.classList.add("message__timestamp");

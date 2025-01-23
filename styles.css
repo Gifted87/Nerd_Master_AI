@@ -857,22 +857,21 @@ body {
   }
 }
 
-
 @media (max-width: 768px) {
   .action-buttons-container {
     gap: 0.4rem;
     padding: 0.5rem;
   }
-  
+
   .action-btn {
     padding: 0.5rem 0.7rem;
     font-size: 0.85rem;
   }
-  
+
   .action-btn i {
     font-size: 0.8em;
   }
-  
+
   .action-btn span {
     display: inline-block; /* Ensure text stays inline */
   }
@@ -906,7 +905,7 @@ body {
   border: 1px solid rgba(52, 211, 153, 0.2);
 }
 
-.action-btn[data-action="summarize"] {
+.action-btn[data-action="Give me a summary of this"] {
   color: #f472b6; /* Pink */
   border: 1px solid rgba(244, 114, 182, 0.2);
 }
@@ -936,6 +935,11 @@ body {
   border: 1px solid rgba(244, 63, 94, 0.2);
 }
 
+.action-btn[data-action="Give me more"] {
+  color: #818cf8; /* Indigo */
+  border: 1px solid rgba(129, 140, 248, 0.2);
+}
+
 #copy-btn {
   color: #c084fc; /* Lavender */
   border: 1px solid rgba(192, 132, 252, 0.2);
@@ -959,7 +963,7 @@ body {
   background: rgba(52, 211, 153, 0.1);
 }
 
-.action-btn[data-action="summarize"]:hover {
+.action-btn[data-action="Give me a summary of this"]:hover {
   background: rgba(244, 114, 182, 0.1);
 }
 
@@ -983,6 +987,10 @@ body {
   background: rgba(244, 63, 94, 0.1);
 }
 
+.action-btn[data-action="Give me more"]:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
 #copy-btn:hover {
   background: rgba(192, 132, 252, 0.1);
 }
@@ -993,16 +1001,91 @@ body {
     border-width: 1px;
     padding: 0.5rem 0.8rem;
   }
-  
+
   .action-btn span {
     display: inline; /* Ensure text remains visible */
   }
 }
 
+/* Add this to styles.css */
+.message--bot table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
 
+.message--bot th,
+.message--bot td {
+  padding: 0.75rem;
+  border: 1px solid var(--glass-border);
+  text-align: left;
+  color: var(--text-primary);
+}
 
+.message--bot th {
+  background-color: rgba(var(--primary-color-rgb), 0.2);
+  font-weight: 600;
+  color: var(--primary-color);
+}
 
+.message--bot tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
 
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .message--bot table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
 
+  .message--bot th,
+  .message--bot td {
+    min-width: 120px;
+  }
+}
 
+/* Code block copy buttons */
+.message--bot pre {
+  position: relative;
+  margin: 0.5rem 0;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  background: rgba(0, 0, 0, 0.3) !important;
+}
 
+.code-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.code-copy-btn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.code-copy-btn i {
+  font-size: 0.8em;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .code-copy-btn {
+    padding: 0.25rem 0.4rem;
+  }
+}
