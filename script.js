@@ -55,7 +55,6 @@ const fileInput = document.getElementById("file-input");
 const uploadButton = document.getElementById("upload-button");
 let currentFile = null;
 
-
 const customizationForm = document.getElementById("customization-form");
 const taskTypeSelect = document.getElementById("task-type-select");
 const subjectSelect = document.getElementById("subject-select");
@@ -509,9 +508,9 @@ function addMessageToChat(
   }
 
   if (type === "bot" && message.includes("<img")) {
-    messageContentDiv.querySelectorAll('img').forEach(img => {
-      img.style.maxWidth = '100%';
-      img.style.borderRadius = 'var(--border-radius)';
+    messageContentDiv.querySelectorAll("img").forEach((img) => {
+      img.style.maxWidth = "100%";
+      img.style.borderRadius = "var(--border-radius)";
     });
   }
 
@@ -785,8 +784,6 @@ window.addEventListener("resize", () => {
   }
 });
 
-
-
 uploadButton.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", handleFileSelect);
 
@@ -794,19 +791,66 @@ function handleFileSelect(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  
 
   // Validate file type and size
-  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  const validTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+  ];
   if (!validTypes.includes(file.type)) {
-    displayError('Invalid file type. Only images and PDFs are allowed.');
+    displayError("Invalid file type. Only images and PDFs are allowed.");
     return;
   }
 
-  if (file.size > 4 * 1024 * 1024) { // 4MB limit
-    displayError('File size too large. Maximum 4MB allowed.');
+  if (file.size > 4 * 1024 * 1024) {
+    // 4MB limit
+    displayError("File size too large. Maximum 4MB allowed.");
     return;
   }
+
+  const container = document.getElementById('input-preview-container');
+  container.innerHTML = '';
+
+  // Create preview element
+  const preview = document.createElement('div');
+  preview.className = 'file-preview';
+
+  // Create remove button
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove-file';
+  removeBtn.innerHTML = '×';
+  removeBtn.onclick = () => {
+    console.log('Remove file');
+    container.innerHTML = '';
+    fileInput.value = '';
+    currentFile = null;
+  };
+
+  // Handle image files
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      // Create image element inside preview div
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.alt = file.name;
+      preview.appendChild(img);
+      preview.appendChild(removeBtn);
+    };
+    reader.readAsDataURL(file);
+  } 
+  // Handle PDF files
+  else {
+    const fileMeta = document.createElement('div');
+    fileMeta.className = 'file-meta';
+    fileMeta.textContent = `📄 ${file.name}`;
+    preview.appendChild(fileMeta);
+    preview.appendChild(removeBtn);
+  }
+
+  container.appendChild(preview);
 
   currentFile = file;
 
@@ -815,14 +859,14 @@ function handleFileSelect(e) {
   //   type: file.type,
   //   size: file.size
   // };
-  showFilePreview(file);
+  // showFilePreview(file);
 }
 
 function showFilePreview(file) {
-  const previewContainer = document.createElement('div');
-  previewContainer.className = 'file-preview';
+  const previewContainer = document.createElement("div");
+  previewContainer.className = "file-preview";
 
-  if (file.type.startsWith('image/')) {
+  if (file.type.startsWith("image/")) {
     const reader = new FileReader();
     reader.onload = (e) => {
       previewContainer.innerHTML = `
@@ -845,12 +889,9 @@ function showFilePreview(file) {
 
 window.removeCurrentFile = () => {
   currentFile = null;
-  document.querySelector('.file-preview')?.remove();
-  fileInput.value = '';
+  document.querySelector(".file-preview")?.remove();
+  fileInput.value = "";
 };
-
-
-
 
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -862,29 +903,40 @@ chatForm.addEventListener("submit", async (e) => {
   if (currentFile) {
     const reader = new FileReader();
     fileData = await new Promise((resolve) => {
-      reader.onload = () => resolve({
-        name: currentFile.name,
-        mimeType: currentFile.type,
-        data: reader.result.split(',')[1],
-        size: currentFile.size
-      });
+      reader.onload = () =>
+        resolve({
+          name: currentFile.name,
+          mimeType: currentFile.type,
+          data: reader.result.split(",")[1],
+          size: currentFile.size,
+        });
       reader.readAsDataURL(currentFile);
     });
   }
 
-  
+  let messageContent = message;
+  if (fileData) {
+    if (fileData.mimeType.startsWith("image/")) {
+      messageContent += `<img src="data:${fileData.mimeType};base64,${fileData.data}" alt="${fileData.name}" style="max-width:100%;border-radius:var(--border-radius);margin-top:0.5rem;">`;
+    } else {
+      messageContent += `<div class="file-meta" style="margin-top:0.5rem;">📄 ${fileData.name}</div>`;
+    }
+  }
 
+  if (currentFile) {
+    showLoading("Uploading file...");
+  }
 
   if (message && oldChat === false) {
     const payload = {
-    action: "send_message",
-    message: message,
-    file: fileData
-  };
+      action: "send_message",
+      message: message,
+      file: fileData,
+    };
     console.log("Sending message payload:", payload);
     socket.send(JSON.stringify(payload));
     addMessageToChat(
-      message,
+      messageContent,
       "user",
       false,
       null,
@@ -894,19 +946,22 @@ chatForm.addEventListener("submit", async (e) => {
     chatInput.value = "";
     removeCurrentFile();
     autoResizeTextarea();
+    currentFile = null;
+    fileInput.value = "";
+    document.getElementById("input-preview-container").innerHTML = "";
     toggleButtonLoading(true);
   } else {
     console.log(oldChat);
     const payload = {
-    action: "continue_conversation",
-    message: message,
-    file: fileData,
-    conversationId: selectedConversationId
-  };
+      action: "continue_conversation",
+      message: message,
+      file: fileData,
+      conversationId: selectedConversationId,
+    };
     console.log("Sending message payload:", payload);
     socket.send(JSON.stringify(payload));
     addMessageToChat(
-      message,
+      messageContent,
       "user",
       false,
       null,
@@ -916,6 +971,9 @@ chatForm.addEventListener("submit", async (e) => {
     chatInput.value = "";
     removeCurrentFile();
     autoResizeTextarea();
+    currentFile = null;
+    fileInput.value = "";
+    document.getElementById("input-preview-container").innerHTML = "";
     toggleButtonLoading(true);
   }
 });

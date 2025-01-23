@@ -235,6 +235,7 @@
           <!-- Chat messages will be loaded here -->
         </section>
         <footer class="chat-input-area">
+          <div class="input-preview-container" id="input-preview-container"></div>
           <div class="action-buttons-container hidden" id="action-buttons">
             <button class="action-btn" id="copy-btn" data-tooltip="Copy">
               <i class="far fa-copy"></i><span>Copy</span>
@@ -470,6 +471,7 @@
     </div>
     <div class="overlay hidden" id="loading-overlay">
       <div class="loading-spinner"></div>
+      <p id="loading-text" style="color: white; margin-top: 1rem;"></p>
     </div>
     <textarea id="copy-content" class="hidden"></textarea>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>

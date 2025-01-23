@@ -290,6 +290,7 @@ body {
   ); /* Solid primary color for user messages */
   color: white; /* White text on primary background */
   text-align: left;
+  max-width: 80%;
   border-radius: 0.5rem 0.5rem 0 0.5rem; /* Rounded corners on the left */
   /* Add a subtle gradient to user messages */
   background-image: linear-gradient(to right, #7c3aed, var(--primary-color));
@@ -1117,11 +1118,106 @@ body {
   position: absolute;
   top: 0.2rem;
   right: 0.2rem;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   border: none;
   color: white;
   border-radius: 50%;
   width: 24px;
   height: 24px;
   cursor: pointer;
+}
+
+.message--user img {
+  max-width: 100%;
+  border-radius: var(--border-radius);
+  margin-top: 0.5rem;
+}
+
+.message--user .file-meta {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius);
+}
+
+.file-preview-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.file-preview {
+  position: relative;
+  max-width: 150px;
+  border-radius: var(--border-radius);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 0.5rem;
+}
+
+.file-preview img {
+  max-width: 100%;
+  border-radius: var(--border-radius);
+}
+
+.remove-file {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--primary-color);
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.file-meta {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 0.25rem;
+}
+/* Add to styles.css */
+.input-preview-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.input-preview {
+  position: relative;
+  max-width: 150px;
+  border-radius: var(--border-radius);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 0.5rem;
+}
+
+.input-preview img {
+  max-width: 100%;
+  border-radius: var(--border-radius);
+}
+
+.remove-preview {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--primary-color);
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
