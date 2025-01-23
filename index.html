@@ -137,12 +137,12 @@
           </button>
         </form>
         <!-- Cancel Button -->
-         <div style="text-align: center; margin-top: 1rem;">---- Or ----</div>
+        <div style="text-align: center; margin-top: 1rem">---- Or ----</div>
         <button
           type="button"
           class="auth-form__button auth-button"
           id="cancel-customization-button"
-        style="align-self: center; justify-self: center; width: 100%;"
+          style="align-self: center; justify-self: center; width: 100%"
         >
           Go to Casual Chat
         </button>
@@ -182,7 +182,7 @@
             <i class="fas fa-bars"></i>
           </button>
           <h1 class="chat-header__title">
-            <i class="fas fa-bolt"></i> Result Spice
+            <i class="fas fa-graduation-cap"></i> My School Bot
           </h1>
           <div class="sidebar__actions">
             <button
@@ -198,7 +198,7 @@
               id="load-conversations-button"
               title="Load Conversations"
               aria-label="Load previous conversations"
-              style="display: none;"
+              style="display: none"
             >
               <i class="fas fa-history"></i>
             </button>
@@ -214,10 +214,16 @@
         </header>
         <section class="chat-messages" id="chat-messages">
           <div class="initial-message" id="initial-chat-message">
-            <p>Welcome to Result Spice!</p>
-            <p style="color: white; font-size: small;">Spice up your results with AI.</p>
+            <p>Welcome to My School Bot!</p>
+            <p style="color: white; font-size: small">
+              Your school life just got easier
+            </p>
           </div>
-          <div class="typing-indicator hidden" id="typing-indicator" style="display: none;">
+          <div
+            class="typing-indicator hidden"
+            id="typing-indicator"
+            style="display: none"
+          >
             Bot is typing...
           </div>
           <div
@@ -229,6 +235,68 @@
           <!-- Chat messages will be loaded here -->
         </section>
         <footer class="chat-input-area">
+          <div class="action-buttons-container hidden" id="action-buttons">
+            <button class="action-btn" id="copy-btn" data-tooltip="Copy">
+              <i class="far fa-copy"></i><span>Copy</span>
+            </button>
+
+            <button
+              class="action-btn"
+              data-action="regenerate this response"
+              data-tooltip="Regenerate"
+            >
+              <i class="fas fa-sync-alt"></i><span>Regenerate</span>
+            </button>
+            <button
+              class="action-btn"
+              data-action="make it shorter"
+              data-tooltip="Shorter"
+            >
+              <i class="fas fa-compress-alt"></i><span>Shorter</span>
+            </button>
+            <button
+              class="action-btn"
+              data-action="make it longer"
+              data-tooltip="Longer"
+            >
+              <i class="fas fa-expand-alt"></i><span>Longer</span>
+            </button>
+            <button
+              class="action-btn"
+              data-action="summarize"
+              data-tooltip="Summarize"
+            >
+              <i class="fas fa-scroll"></i><span>Summarize</span>
+            </button>
+            <button
+              class="action-btn"
+              data-action="continue from where you stopped"
+              data-tooltip="Continue"
+            >
+              <i class="fas fa-play"></i><span>Continue</span>
+            </button>
+            <button
+              class="action-btn"
+              data-action="rephrase"
+              data-tooltip="Rephrase"
+            >
+              <i class="fas fa-paragraph"></i><span>Rephrase</span>
+            </button>
+
+            <button class="action-btn" data-action="sound more professional">
+              <i class="fas fa-briefcase"></i>
+              <span>Professional</span>
+            </button>
+            <button class="action-btn" data-action="sound more casual">
+              <i class="fas fa-tshirt"></i>
+              <span>Casual</span>
+            </button>
+            <button class="action-btn" data-action="sound more creative">
+              <i class="fas fa-paint-brush"></i>
+              <span>Creative</span>
+            </button>
+          </div>
+
           <form class="input-area" id="chat-form">
             <textarea
               class="input-area__input chat-input"
@@ -243,7 +311,7 @@
               id="send-button"
               aria-label="Send message"
             >
-              Send <i class="fas fa-paper-plane"></i>
+              <i class="fas fa-paper-plane"></i>
             </button>
           </form>
         </footer>
@@ -386,6 +454,7 @@
     <div class="overlay hidden" id="loading-overlay">
       <div class="loading-spinner"></div>
     </div>
+    <textarea id="copy-content" class="hidden"></textarea>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="./script.js"></script>
