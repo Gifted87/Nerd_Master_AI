@@ -310,11 +310,26 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
       } else if (action === "continue_conversation") {
         // ... (continue_conversation action handler - no changes) ...
         const userMessage = data.message?.trim();
+        const fileData = data.file;
 
-        if (!userMessage) {
-          sendError(ws, "No message provided", "input_validation");
+        if (!userMessage && !fileData) {
+          sendError(ws, "No message or file provided", "input_validation");
           return;
         }
+
+        // Validate file data if present
+        if (fileData) {
+          if (fileData.size > 4 * 1024 * 1024) {
+            sendError(ws, "File size exceeds 4MB limit", "file_validation");
+            return;
+          }
+          if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(fileData.mimeType)) {
+            sendError(ws, "Invalid file type", "file_validation");
+            return;
+          }
+        }
+
+        
         let currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
 
@@ -348,7 +363,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           const botResponse = await geminiService.generateResponse(
             chat,
             userMessage,
-            ws
+            ws,
+            fileData
           );
           const htmlResponse = geminiService.md.render(botResponse);
           const timestamp = Date.now();
@@ -357,6 +373,11 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             userId: userId,
             type: "user",
             message: userMessage,
+            file: fileData ? JSON.stringify({
+              name: fileData.name,
+              mimeType: fileData.mimeType,
+              size: fileData.size
+            }) : null,
             timestamp: timestamp,
             conversationId: currentConversationId,
           };
@@ -389,11 +410,25 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
       } else if (action === "send_message") {
         // ... (send_message action handler - no changes) ...
         const userMessage = data.message?.trim();
+        const fileData = data.file;
 
-        if (!userMessage) {
-          sendError(ws, "No message provided", "input_validation");
+        if (!userMessage && !fileData) {
+          sendError(ws, "No message or file provided", "input_validation");
           return;
         }
+
+        // Validate file data if present
+        if (fileData) {
+          if (fileData.size > 4 * 1024 * 1024) {
+            sendError(ws, "File size exceeds 4MB limit", "file_validation");
+            return;
+          }
+          if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(fileData.mimeType)) {
+            sendError(ws, "Invalid file type", "file_validation");
+            return;
+          }
+        }
+
         let currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
 
@@ -426,7 +461,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           const botResponse = await geminiService.generateResponse(
             chat,
             userMessage,
-            ws
+            ws,
+            fileData
           );
           const htmlResponse = geminiService.md.render(botResponse);
           const timestamp = Date.now();
@@ -435,6 +471,11 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             userId: userId,
             type: "user",
             message: userMessage,
+            file: fileData ? JSON.stringify({
+              name: fileData.name,
+              mimeType: fileData.mimeType,
+              size: fileData.size
+            }) : null,
             timestamp: timestamp,
             conversationId: currentConversationId,
           };

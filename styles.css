@@ -1089,3 +1089,39 @@ body {
     padding: 0.25rem 0.4rem;
   }
 }
+
+/* File upload styles */
+.file-upload-container {
+  position: relative;
+}
+
+#upload-button {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  margin-right: 0.5rem;
+}
+
+.file-preview {
+  max-width: 200px;
+  margin: 0.5rem 0;
+  border-radius: var(--border-radius);
+  position: relative;
+}
+
+.file-preview img {
+  max-width: 100%;
+  border-radius: var(--border-radius);
+}
+
+.remove-file {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}

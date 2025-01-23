@@ -224,7 +224,7 @@
             id="typing-indicator"
             style="display: none"
           >
-            Bot is typing...
+          <i class="fas fa-terminal"></i>
           </div>
           <div
             class="loading-previous-messages hidden"
@@ -309,6 +309,12 @@
           </div>
 
           <form class="input-area" id="chat-form">
+            <div class="file-upload-container">
+              <input type="file" id="file-input" class="hidden" accept="image/*,application/pdf">
+              <button type="button" id="upload-button" class="input-area__button">
+                <i class="fas fa-paperclip"></i>
+              </button>
+            </div>
             <textarea
               class="input-area__input chat-input"
               id="chat-input"

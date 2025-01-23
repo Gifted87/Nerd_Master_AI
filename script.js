@@ -50,6 +50,12 @@ let lastBotMessage = null;
 const chatbotCustomizationDialog = document.getElementById(
   "chatbot-customization-dialog"
 );
+
+const fileInput = document.getElementById("file-input");
+const uploadButton = document.getElementById("upload-button");
+let currentFile = null;
+
+
 const customizationForm = document.getElementById("customization-form");
 const taskTypeSelect = document.getElementById("task-type-select");
 const subjectSelect = document.getElementById("subject-select");
@@ -210,7 +216,7 @@ socket.onmessage = (event) => {
       const typingIndicator = document.createElement("div");
       typingIndicator.className = "typing-indicator hidden";
       typingIndicator.id = "typing-indicator";
-      typingIndicator.textContent = "Bot is typing...";
+      // typingIndicator.textContent = "Bot is typing...";
       chatMessages.appendChild(typingIndicator);
 
       showTypingIndicator();
@@ -502,6 +508,13 @@ function addMessageToChat(
     actionButtons.classList.add("hidden");
   }
 
+  if (type === "bot" && message.includes("<img")) {
+    messageContentDiv.querySelectorAll('img').forEach(img => {
+      img.style.maxWidth = '100%';
+      img.style.borderRadius = 'var(--border-radius)';
+    });
+  }
+
   messageContentDiv.querySelectorAll("pre code").forEach((codeBlock) => {
     const pre = codeBlock.closest("pre");
     const copyBtn = createCodeCopyButton(codeBlock);
@@ -681,7 +694,7 @@ function displayError(message, errorType) {
 function toggleButtonLoading(isLoading) {
   sendButton.disabled = isLoading;
   sendButton.innerHTML = isLoading
-    ? '<i>Bot is typing...</i> <div class="loading-spinner"></div>'
+    ? '<i class="fas fa-terminal"></i> <div class="loading-spinner"></div>'
     : '<i class="fas fa-paper-plane"></i>';
 }
 
@@ -772,11 +785,102 @@ window.addEventListener("resize", () => {
   }
 });
 
-chatForm.addEventListener("submit", (e) => {
+
+
+uploadButton.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", handleFileSelect);
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  
+
+  // Validate file type and size
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  if (!validTypes.includes(file.type)) {
+    displayError('Invalid file type. Only images and PDFs are allowed.');
+    return;
+  }
+
+  if (file.size > 4 * 1024 * 1024) { // 4MB limit
+    displayError('File size too large. Maximum 4MB allowed.');
+    return;
+  }
+
+  currentFile = file;
+
+  // currentFile = {
+  //   name: file.name,
+  //   type: file.type,
+  //   size: file.size
+  // };
+  showFilePreview(file);
+}
+
+function showFilePreview(file) {
+  const previewContainer = document.createElement('div');
+  previewContainer.className = 'file-preview';
+
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewContainer.innerHTML = `
+        <img src="${e.target.result}" alt="Preview">
+        <button class="remove-file" onclick="removeCurrentFile()">&times;</button>
+      `;
+      chatMessages.appendChild(previewContainer);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    previewContainer.innerHTML = `
+      <div class="file-meta">
+        <p>${file.name}</p>
+        <button class="remove-file" onclick="removeCurrentFile()">&times;</button>
+      </div>
+    `;
+    chatMessages.appendChild(previewContainer);
+  }
+}
+
+window.removeCurrentFile = () => {
+  currentFile = null;
+  document.querySelector('.file-preview')?.remove();
+  fileInput.value = '';
+};
+
+
+
+
+chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = chatInput.value.trim();
+
+  if (!message && !currentFile) return;
+
+  let fileData = null;
+  if (currentFile) {
+    const reader = new FileReader();
+    fileData = await new Promise((resolve) => {
+      reader.onload = () => resolve({
+        name: currentFile.name,
+        mimeType: currentFile.type,
+        data: reader.result.split(',')[1],
+        size: currentFile.size
+      });
+      reader.readAsDataURL(currentFile);
+    });
+  }
+
+  
+
+
   if (message && oldChat === false) {
-    const payload = { action: "send_message", message: message };
+    const payload = {
+    action: "send_message",
+    message: message,
+    file: fileData
+  };
     console.log("Sending message payload:", payload);
     socket.send(JSON.stringify(payload));
     addMessageToChat(
@@ -788,15 +892,17 @@ chatForm.addEventListener("submit", (e) => {
       selectedConversationId
     );
     chatInput.value = "";
+    removeCurrentFile();
     autoResizeTextarea();
     toggleButtonLoading(true);
   } else {
     console.log(oldChat);
     const payload = {
-      action: "continue_conversation",
-      message: message,
-      conversationId: selectedConversationId,
-    };
+    action: "continue_conversation",
+    message: message,
+    file: fileData,
+    conversationId: selectedConversationId
+  };
     console.log("Sending message payload:", payload);
     socket.send(JSON.stringify(payload));
     addMessageToChat(
@@ -808,6 +914,8 @@ chatForm.addEventListener("submit", (e) => {
       selectedConversationId
     );
     chatInput.value = "";
+    removeCurrentFile();
+    autoResizeTextarea();
     toggleButtonLoading(true);
   }
 });
