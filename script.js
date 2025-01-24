@@ -135,6 +135,7 @@ function updateStreamDisplay(content, conversationId) {
     contentDiv.innerHTML += '<span class="streaming-cursor"></span>';
   }
 
+
   // Highlight code blocks incrementally
   contentDiv.querySelectorAll("pre code").forEach((block) => {
     if (!block.dataset.highlighted) {
@@ -160,7 +161,20 @@ function finalizeStream(responseData) {
   }
     lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
   
+
+    messageDiv.querySelectorAll("pre code").forEach((codeBlock) => {
+      const pre = codeBlock.closest("pre");
+      const copyBtn = createCodeCopyButton(codeBlock);
+      pre.style.position = "relative";
+      pre.appendChild(copyBtn);
+      hljs.highlightBlock(codeBlock);
+    });
+
+
   actionButtons.classList.remove("hidden");
+
+
+
 
   // Reset stream state
   streamBuffer = "";
