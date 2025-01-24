@@ -1,12 +1,11 @@
-const {
-  GoogleGenerativeAI,
-} = require("@google/generative-ai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require("dotenv");
 const MarkdownIt = require("markdown-it");
 const hljs = require("highlight.js");
 const { GoogleAIFileManager } = require("@google/generative-ai/server");
-const fs = require('fs');
-
+const fs = require("fs");
+const sessionManager = require("./sessionManager");
+const uuid = require("uuid");
 dotenv.config();
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -21,7 +20,9 @@ if (!GOOGLE_API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp-01-21" }); // Default model
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-thinking-exp-01-21",
+}); // Default model
 
 const generationConfig = {
   temperature: 1.5,
@@ -30,19 +31,19 @@ const generationConfig = {
   maxOutputTokens: 8192,
 };
 
-
-
 async function uploadToGemini(fileData) {
   try {
     // Create temporary file path
-    const tempPath = `./temp/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileData.name.split('.').pop()}`;
-    fs.writeFileSync(tempPath, Buffer.from(fileData.data, 'base64'));
-    
+    const tempPath = `./temp/${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}.${fileData.name.split(".").pop()}`;
+    fs.writeFileSync(tempPath, Buffer.from(fileData.data, "base64"));
+
     const uploadResult = await fileManager.uploadFile(tempPath, {
       mimeType: fileData.mimeType,
       displayName: fileData.name,
     });
-    
+
     fs.unlinkSync(tempPath); // Clean up temp file
     console.log("Uploaded file details:", uploadResult.file);
     return uploadResult.file;
@@ -57,8 +58,8 @@ async function waitForFilesActive(files) {
   for (const file of files) {
     let currentFile = await fileManager.getFile(file.name);
     while (currentFile.state === "PROCESSING") {
-      process.stdout.write('.');
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      process.stdout.write(".");
+      await new Promise((resolve) => setTimeout(resolve, 5000));
       currentFile = await fileManager.getFile(file.name);
     }
     if (currentFile.state !== "ACTIVE") {
@@ -127,8 +128,8 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         parts.push({
           fileData: {
             mimeType: geminiFile.mimeType,
-            fileUri: geminiFile.uri
-          }
+            fileUri: geminiFile.uri,
+          },
         });
       }
       await waitForFilesActive(uploadedFiles);
@@ -136,7 +137,8 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
 
     console.log("Push complete parts to chat completed. Parts:", parts);
 
-    const result = await chat.sendMessage(parts);
+    const result = await chat.sendMessageStream(parts);
+    let fullResponse = "";
 
     console.log("response from chat.sendMessage generated");
 
@@ -146,12 +148,43 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
     console.log(`API call took ${elapsedTime}ms`);
     console.log("Raw API response:", result);
 
-    const response = result.response;
-    const responseText = await response.text();
+    try {
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        fullResponse += chunkText;
 
-    console.log("Response text:", responseText);
+        // Send chunk immediately
+        ws.send(
+          JSON.stringify({
+            type: "stream_chunk",
+            chunk: chunkText,
+            conversationId: sessionManager.getCurrentConversationIdBySocket(ws),
+          })
+        );
+      }
+    } catch (streamError) {
+      console.error("Stream error:", streamError);
+      ws.send(
+        JSON.stringify({
+          type: "stream_error",
+          message: "Response generation was interrupted",
+        })
+      );
+      throw streamError;
+    }
 
-    return responseText;
+    // Finalize and save
+    const htmlResponse = md.render(fullResponse);
+    ws.send(
+      JSON.stringify({
+        type: "stream_end",
+        message: htmlResponse,
+        conversationId: sessionManager.getCurrentConversationIdBySocket(ws),
+      })
+    );
+
+    return fullResponse;
+
   } catch (error) {
     console.error("Error generating response:", error);
     if (error.response) {

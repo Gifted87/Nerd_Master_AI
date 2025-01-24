@@ -414,13 +414,13 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           };
           await saveMessage(pool, messageToSaveBot);
 
-          ws.send(
-            JSON.stringify({
-              type: "bot",
-              message: htmlResponse,
-              conversationId: currentConversationId,
-            })
-          );
+          // ws.send(
+          //   JSON.stringify({
+          //     type: "bot",
+          //     message: htmlResponse,
+          //     conversationId: currentConversationId,
+          //   })
+          // );
         } catch (error) {
           console.error("Error processing message:", error);
           sendError(
@@ -535,13 +535,13 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           };
           await saveMessage(pool, messageToSaveBot);
 
-          ws.send(
-            JSON.stringify({
-              type: "bot",
-              message: htmlResponse,
-              conversationId: currentConversationId,
-            })
-          );
+          // ws.send(
+          //   JSON.stringify({
+          //     type: "bot",
+          //     message: htmlResponse,
+          //     conversationId: currentConversationId,
+          //   })
+          // );
         } catch (error) {
           console.error("Error processing message:", error);
           sendError(

@@ -201,9 +201,11 @@ body {
 
 /* Chat Area */
 .chat-area {
-  flex-grow: 0;
+  /* flex-grow: 0; */
+  /* background-color: wheat; */
   display: flex;
   width: 100%;
+  max-width: 90%;
   flex-direction: column;
 }
 
@@ -590,6 +592,7 @@ body {
     /* flex-grow: 1; */
     display: flex;
     width: 100%;
+    max-width: 100%;
     flex-direction: column;
   }
 
@@ -715,7 +718,8 @@ body {
 /* Customization Dialog Styles */
 #chatbot-customization-dialog .dialog-container {
   width: 90%;
-  height: 90vh;
+  /* height: 90vh; */
+  
   max-width: 500px; /* Slightly wider than auth container */
   text-align: left; /* Align text to the left within the dialog */
   overflow-y: auto;
@@ -1220,4 +1224,81 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Add these after existing message styles */
+.message.streaming {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid var(--primary-color);
+  position: relative;
+  /* overflow: hidden; */
+}
+
+.message.streaming::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, var(--primary-color), transparent 70%);
+  animation: streaming-line 2s infinite;
+}
+
+.streaming-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1em;
+  background: currentColor;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 1.2s infinite;
+  opacity: 0.7;
+}
+
+/* Add to existing animations */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes streaming-line {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Enhanced error states */
+.stream-error {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.stream-error::before {
+  content: "⚠️";
+  position: absolute;
+  left: -2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.5));
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .message.streaming::after {
+    height: 1px;
+  }
+
+  .streaming-cursor {
+    width: 6px;
+    height: 0.9em;
+  }
 }

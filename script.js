@@ -1,4 +1,5 @@
 hljs.highlightAll();
+
 const chatApp = document.getElementById("chat-app");
 const authContainer = document.getElementById("auth-container");
 const chatForm = document.getElementById("chat-form");
@@ -51,6 +52,12 @@ const chatbotCustomizationDialog = document.getElementById(
   "chatbot-customization-dialog"
 );
 
+// Add these variables at the top
+let streamBuffer = '';
+let currentStreamMessageId = null;
+let currentStreamConversationId = null;
+let renderDebounce = null;
+
 const fileInput = document.getElementById("file-input");
 const uploadButton = document.getElementById("upload-button");
 let currentFile = null;
@@ -62,6 +69,7 @@ const topicInput = document.getElementById("topic-input");
 const temperatureInput = document.getElementById("temperature-input");
 const aiModelSelect = document.getElementById("ai-model-select");
 const topPInput = document.getElementById("top-p-input");
+
 
 function autoResizeTextarea() {
   const textarea = chatInput;
@@ -75,6 +83,103 @@ function autoResizeTextarea() {
   if (textarea.value === "") {
     textarea.style.height = "3rem"; // Match your min-height value
   }
+}
+
+function handleStreamChunk(responseData) {
+  streamBuffer += responseData.chunk;
+
+  // Create message container if it doesn't exist
+  if (!currentStreamMessageId) {
+    currentStreamMessageId = Date.now().toString();
+    const messageDiv = createMessageContainer(responseData.conversationId);
+    chatMessages.appendChild(messageDiv);
+  }
+
+  hideLoading();
+
+  // Debounced rendering for better performance
+  clearTimeout(renderDebounce);
+  renderDebounce = setTimeout(() => {
+    updateStreamDisplay(streamBuffer, responseData.conversationId);
+  }, 100); // Render at 10fps max
+}
+
+function createMessageContainer(conversationId) {
+  const messageDiv = document.createElement("div");
+  messageDiv.className = "message message--bot streaming";
+  messageDiv.dataset.messageId = currentStreamMessageId;
+  messageDiv.dataset.conversationId = conversationId;
+
+  const contentDiv = document.createElement("div");
+  contentDiv.className = "message__content";
+
+  messageDiv.appendChild(contentDiv);
+  return messageDiv;
+}
+
+function updateStreamDisplay(content, conversationId) {
+  const messageDiv = chatMessages.querySelector(
+    `[data-message-id="${currentStreamMessageId}"]`
+  );
+  if (!messageDiv) return;
+
+  const contentDiv = messageDiv.querySelector(".message__content");
+  contentDiv.innerHTML = markdown.toHTML(content);
+  
+  // Manually apply Highlight.js to code blocks
+  contentDiv.querySelectorAll('pre code').forEach((block) => {
+    hljs.highlightElement(block);
+  });
+  // Add temporary cursor
+  if (!contentDiv.querySelector(".streaming-cursor")) {
+    contentDiv.innerHTML += '<span class="streaming-cursor"></span>';
+  }
+
+  // Highlight code blocks incrementally
+  contentDiv.querySelectorAll("pre code").forEach((block) => {
+    if (!block.dataset.highlighted) {
+      hljs.highlightElement(block);
+      block.dataset.highlighted = "true";
+    }
+  });
+  // const shouldScroll = chatMessages.scrollTop + chatMessages.clientHeight >= 
+  //                      chatMessages.scrollHeight - 50;
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function finalizeStream(responseData) {
+  const messageDiv = chatMessages.querySelector(
+    `[data-message-id="${currentStreamMessageId}"]`
+  );
+  if (messageDiv) {
+    messageDiv.classList.remove("streaming");
+    messageDiv.querySelector(".message__content").innerHTML =
+      responseData.message;
+    hljs.highlightAll();
+  }
+    lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
+  
+  actionButtons.classList.remove("hidden");
+
+  // Reset stream state
+  streamBuffer = "";
+  currentStreamMessageId = null;
+  hideLoading();
+  hideTypingIndicator();
+  toggleButtonLoading(false);
+}
+
+function handleStreamError(responseData) {
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "error-message";
+  errorDiv.textContent = responseData.message;
+  chatMessages.appendChild(errorDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Reset stream state
+  streamBuffer = "";
+  currentStreamMessageId = null;
 }
 
 // Add event listeners
@@ -150,7 +255,13 @@ socket.onmessage = (event) => {
 
     console.log("Received from server:", responseData);
 
-    if (messageType === "connection_success") {
+    if (messageType === "stream_chunk") {
+      handleStreamChunk(responseData);
+    } else if (messageType === "stream_end") {
+      finalizeStream(responseData);
+    } else if (messageType === "stream_error") {
+      handleStreamError(responseData);
+    } else if (messageType === "connection_success") {
       const userId = responseData.userId;
       console.log("Connection Successful, userId:", userId);
       authToken = userId;
@@ -532,6 +643,7 @@ function addMessageToChat(
   actionsDiv.classList.add("message__actions");
 
   if (type === "user") {
+    actionButtons.classList.add("hidden");
     const editBtn = createActionButton("fas fa-edit", () =>
       editMessage(messageDiv, messageContentDiv, message)
     );
