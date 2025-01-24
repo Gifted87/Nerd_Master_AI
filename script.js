@@ -71,6 +71,30 @@ const aiModelSelect = document.getElementById("ai-model-select");
 const topPInput = document.getElementById("top-p-input");
 
 
+// Add at the top with other element selectors
+const sidebarCollapseToggle = document.getElementById('sidebar-collapse-toggle');
+
+// Add this event listener
+sidebarCollapseToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  sidebar.classList.toggle('collapsed');
+  
+  // Only handle desktop behavior
+  if (window.innerWidth > 768) {
+    if (sidebar.classList.contains('collapsed')) {
+      localStorage.setItem('sidebarCollapsed', 'true');
+    } else {
+      localStorage.removeItem('sidebarCollapsed');
+    }
+  }
+});
+
+// Add this to initialize state
+if (localStorage.getItem('sidebarCollapsed') && window.innerWidth > 768) {
+  sidebar.classList.add('collapsed');
+}
+
+
 function autoResizeTextarea() {
   const textarea = chatInput;
   textarea.style.height = "auto"; // Reset height

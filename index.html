@@ -102,9 +102,9 @@
                   class="form-group__input"
                   id="temperature-input"
                   min="0"
-                  max="1"
+                  max="2"
                   step="0.1"
-                  value="0.7"
+                  value="1"
                 />
               </div>
               <div class="auth-form__group form-group">
@@ -153,6 +153,9 @@
       <aside class="sidebar" id="chat-sidebar">
         <div class="sidebar__header">
           <h2 class="sidebar__site-title">History</h2>
+          <button class="sidebar__toggle" id="sidebar-collapse-toggle">
+            <i class="fas fa-chevron-left"></i>
+          </button>
         </div>
         <nav class="sidebar__nav">
           <ul class="sidebar__conversation-list" id="conversation-list">
@@ -214,10 +217,10 @@
         </header>
         <section class="chat-messages" id="chat-messages">
           <div class="initial-message" id="initial-chat-message">
-            <p>Welcome to My School Bot!</p>
-            <p style="color: white; font-size: small">
+            <p>Welcome to My School Bot!<br>
+            <span style="color: white; font-size: 1rem; font-weight: lighter; margin-top: 0; padding-top: 0;">
               Your school life just got easier
-            </p>
+            </span></p>
           </div>
           <div
             class="typing-indicator hidden"

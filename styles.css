@@ -48,6 +48,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  
 }
 
 .hidden {
@@ -111,6 +112,7 @@ body {
   /* border-radius: 1rem; */
   box-shadow: var(--shadow-md);
   overflow: hidden;
+
 }
 
 /* Sidebar */
@@ -205,7 +207,7 @@ body {
   /* background-color: wheat; */
   display: flex;
   width: 100%;
-  max-width: 90%;
+  max-width: 95%;
   flex-direction: column;
 }
 
@@ -247,7 +249,7 @@ body {
   padding: 1.5rem 2rem; /* Increased padding - keeping this for spacing */
   text-align: center;
   /* color: var(--accent-color);  Removed direct color, using gradient below */
-  font-size: 1.3rem; /* Slightly larger font size */
+  font-size: 2.5rem; /* Slightly larger font size */
   font-weight: 700; /* Even bolder font weight */
   background-color: rgba(
     255,
@@ -258,6 +260,8 @@ body {
   border-radius: var(--border-radius);
   /* box-shadow: var(--shadow-sm); Subtle shadow - keeping this */
   margin: 2rem auto; /* Margin - keeping this */
+margin-bottom: 0;
+padding-bottom: 0;
   width: fit-content; /* Width - keeping this */
   max-width: 90%; /* Max width - keeping this */
 
@@ -718,7 +722,7 @@ body {
 /* Customization Dialog Styles */
 #chatbot-customization-dialog .dialog-container {
   width: 90%;
-  /* height: 90vh; */
+  max-height: 90vh;
   
   max-width: 500px; /* Slightly wider than auth container */
   text-align: left; /* Align text to the left within the dialog */
@@ -1302,3 +1306,287 @@ body {
     height: 0.9em;
   }
 }
+
+
+/* Collapsible Sidebar */
+.sidebar__header {
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar__header:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar__toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 60px;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .sidebar__site-title,
+.sidebar.collapsed .sidebar__conversation-list li {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar.collapsed .sidebar__toggle {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.sidebar.collapsed .sidebar__nav {
+  visibility: hidden;
+}
+
+/* Animate sidebar collapse/expand */
+.sidebar {
+  transition: width 0.3s ease, transform 0.3s ease;
+}
+
+/* Adjust chat area when sidebar collapses */
+.sidebar:not(.collapsed) + .chat-area {
+  width: calc(100% - 250px);
+}
+
+.sidebar.collapsed + .chat-area {
+  width: calc(100% - 60px);
+}
+
+
+@media (max-width: 768px) {
+  .sidebar__toggle {
+    display: none;
+  }
+  
+  .sidebar.collapsed {
+    width: 250px;
+    transform: translateX(-250px);
+  }
+  
+  .sidebar.collapsed + .chat-area {
+    width: 100%;
+  }
+
+  .sidebar:not(.collapsed) + .chat-area {
+    width: 100%;
+  }
+  
+}
+
+/* Add to styles.css */
+.sidebar__toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar__toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.sidebar__toggle i {
+  font-size: 1.2rem;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Rotate icon when collapsed */
+.sidebar.collapsed .sidebar__toggle i {
+  transform: rotate(180deg);
+}
+
+/* Add subtle shadow */
+.sidebar__toggle {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Mobile hiding */
+@media (max-width: 768px) {
+  .sidebar__toggle {
+    display: none;
+  }
+}
+
+
+
+
+
+
+
+
+
+/* Add to styles.css */
+/* Customization Dialog Restyle */
+#chatbot-customization-dialog .dialog-container {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(180%);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  max-width: 450px;
+}
+
+#chatbot-customization-dialog .auth-container__title {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+#chatbot-customization-dialog .form-group {
+  margin-bottom: 1.2rem;
+}
+
+#chatbot-customization-dialog .form-group__label {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  display: block;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--glass-border);
+}
+
+#chatbot-customization-dialog select.form-group__input,
+#chatbot-customization-dialog input.form-group__input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 0.8rem 1rem;
+  border-radius: var(--border-radius);
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+#chatbot-customization-dialog select.form-group__input:hover,
+#chatbot-customization-dialog input.form-group__input:hover {
+  border-color: var(--primary-color);
+}
+
+#chatbot-customization-dialog select.form-group__input:focus,
+#chatbot-customization-dialog input.form-group__input:focus {
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+}
+
+/* Hide AI Model Selector */
+#chatbot-customization-dialog #ai-model-select,
+#chatbot-customization-dialog #ai-model-select + .form-group__label {
+  display: none;
+}
+
+/* Advanced Settings Restyle */
+.advanced-settings {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 1.5rem;
+}
+
+.advanced-settings-toggle {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--border-radius) !important;
+  padding: 0.75rem 1rem !important;
+  width: 100%;
+  justify-content: space-between !important;
+}
+
+.advanced-settings-toggle:hover {
+  background: rgba(var(--primary-color-rgb), 0.1) !important;
+  color: var(--primary-color) !important;
+}
+
+/* Slider Styling */
+input[type="range"].form-group__input {
+  -webkit-appearance: none;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  height: 6px;
+  margin-top: 1rem;
+}
+
+input[type="range"].form-group__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+input[type="range"].form-group__input::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Button Restyle */
+#chatbot-customization-dialog .auth-form__button {
+  background: linear-gradient(
+    to right,
+    rgba(var(--primary-color-rgb), 0.8),
+    rgba(124, 58, 237, 0.8)
+  );
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  padding: 1rem 2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-top: 1.5rem;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+#chatbot-customization-dialog .auth-form__button:hover {
+  background: linear-gradient(
+    to right,
+    var(--primary-color),
+    #7c3aed
+  );
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+#cancel-customization-button {
+  background: transparent !important;
+  border: 1px solid var(--glass-border) !important;
+  margin-top: 1rem;
+}
+
+#cancel-customization-button:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--primary-color) !important;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  #chatbot-customization-dialog .dialog-container {
+    width: 95%;
+    padding: 1.5rem;
+  }
+  
+  #chatbot-customization-dialog .auth-container__title {
+    font-size: 1.3rem;
+  }
+}s
