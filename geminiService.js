@@ -32,15 +32,15 @@ const generationConfig = {
 
 
 
-async function uploadToGemini(fileData, mimeType) {
+async function uploadToGemini(fileData) {
   try {
     // Create temporary file path
-    const tempPath = `./temp/${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const tempPath = `./temp/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileData.name.split('.').pop()}`;
     fs.writeFileSync(tempPath, Buffer.from(fileData.data, 'base64'));
     
     const uploadResult = await fileManager.uploadFile(tempPath, {
       mimeType: fileData.mimeType,
-      displayName: fileData.name || "uploaded-file",
+      displayName: fileData.name,
     });
     
     fs.unlinkSync(tempPath); // Clean up temp file
@@ -108,7 +108,7 @@ const md = new MarkdownIt({
   },
 }).enable(["table", "code"]);
 
-async function generateResponse(chat, userMessage, ws, fileData) {
+async function generateResponse(chat, userMessage, ws, fileDataArray) {
   try {
     console.log("Generating response for user message:", userMessage);
     ws.send(JSON.stringify({ type: "status", message: "typing" }));
@@ -116,22 +116,22 @@ async function generateResponse(chat, userMessage, ws, fileData) {
 
     const startTime = Date.now();
 
+    console.log("Generating response with files:", fileDataArray);
     const parts = [{ text: userMessage }];
-    let uploadedFiles = [];
+    const uploadedFiles = [];
 
-    if (fileData) {
-      // Upload and wait for file processing
-      const geminiFile = await uploadToGemini(fileData);
-      uploadedFiles.push(geminiFile);
+    if (fileDataArray && fileDataArray.length > 0) {
+      for (const fileData of fileDataArray) {
+        const geminiFile = await uploadToGemini(fileData);
+        uploadedFiles.push(geminiFile);
+        parts.push({
+          fileData: {
+            mimeType: geminiFile.mimeType,
+            fileUri: geminiFile.uri
+          }
+        });
+      }
       await waitForFilesActive(uploadedFiles);
-      console.log("Uploaded files:", geminiFile);
-
-      parts.push({
-        fileData: {
-          mimeType: geminiFile.mimeType,
-          fileUri: geminiFile.uri
-        }
-      });
     }
 
     console.log("Push complete parts to chat completed. Parts:", parts);

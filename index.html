@@ -224,7 +224,7 @@
             id="typing-indicator"
             style="display: none"
           >
-          <i class="fas fa-terminal"></i>
+            <i class="fas fa-terminal"></i>
           </div>
           <div
             class="loading-previous-messages hidden"
@@ -235,7 +235,10 @@
           <!-- Chat messages will be loaded here -->
         </section>
         <footer class="chat-input-area">
-          <div class="input-preview-container" id="input-preview-container"></div>
+          <div
+            class="input-preview-container"
+            id="input-preview-container"
+          ></div>
           <div class="action-buttons-container hidden" id="action-buttons">
             <button class="action-btn" id="copy-btn" data-tooltip="Copy">
               <i class="far fa-copy"></i><span>Copy</span>
@@ -286,7 +289,7 @@
             >
               <i class="fas fa-scroll"></i><span>Summarize</span>
             </button>
-            
+
             <button
               class="action-btn"
               data-action="rephrase"
@@ -311,8 +314,18 @@
 
           <form class="input-area" id="chat-form">
             <div class="file-upload-container">
-              <input type="file" id="file-input" class="hidden" accept="image/*,application/pdf">
-              <button type="button" id="upload-button" class="input-area__button">
+              <input
+                type="file"
+                id="file-input"
+                class="hidden"
+                accept="image/*,application/pdf,text/*,application/x-javascript,text/javascript,application/x-python,text/x-python,text/md,text/csv,text/xml,text/rtf,application/vnd.openxmlformats-officedocument.*"
+                multiple
+              />
+              <button
+                type="button"
+                id="upload-button"
+                class="input-area__button"
+              >
                 <i class="fas fa-paperclip"></i>
               </button>
             </div>
@@ -471,7 +484,7 @@
     </div>
     <div class="overlay hidden" id="loading-overlay">
       <div class="loading-spinner"></div>
-      <p id="loading-text" style="color: white; margin-top: 1rem;"></p>
+      <p id="loading-text" style="color: white; margin-top: 1rem"></p>
     </div>
     <textarea id="copy-content" class="hidden"></textarea>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>

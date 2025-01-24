@@ -310,7 +310,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
       } else if (action === "continue_conversation") {
         // ... (continue_conversation action handler - no changes) ...
         const userMessage = data.message?.trim();
-        const fileData = data.file;
+        const fileDataArray = data.files;
 
         if (!userMessage && !fileData) {
           sendError(ws, "No message or file provided", "input_validation");
@@ -318,18 +318,38 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         }
 
         // Validate file data if present
-        if (fileData) {
-          if (fileData.size > 4 * 1024 * 1024) {
-            sendError(ws, "File size exceeds 4MB limit", "file_validation");
-            return;
-          }
-          if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(fileData.mimeType)) {
-            sendError(ws, "Invalid file type", "file_validation");
-            return;
-          }
-        }
+        // if (fileDataArray) {
+        //   // const allowedMimeTypes = [
+        //   //   "image/png",
+        //   //   "image/jpeg",
+        //   //   "image/webp",
+        //   //   "image/heic",
+        //   //   "image/heif",
+        //   //   "application/pdf",
+        //   //   "application/x-javascript",
+        //   //   "text/javascript",
+        //   //   "application/x-python",
+        //   //   "text/x-python",
+        //   //   "text/plain",
+        //   //   "text/html",
+        //   //   "text/css",
+        //   //   "text/md",
+        //   //   "text/csv",
+        //   //   "text/xml",
+        //   //   "text/rtf",
+        //   // ];
 
-        
+        //   // In both send_message and continue_conversation handlers:
+        //   if (fileDataArray.size > 20 * 1024 * 1024) {
+        //     sendError(ws, "File size exceeds 20MB limit", "file_validation");
+        //     return;
+        //   }
+        //   // if (!allowedMimeTypes.includes(fileData.mimeType)) {
+        //   //   sendError(ws, "Invalid file type", "file_validation");
+        //   //   return;
+        //   // }
+        // }
+
         let currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
 
@@ -364,7 +384,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             chat,
             userMessage,
             ws,
-            fileData
+            fileDataArray
           );
           const htmlResponse = geminiService.md.render(botResponse);
           const timestamp = Date.now();
@@ -372,12 +392,14 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           const messageToSaveUser = {
             userId: userId,
             type: "user",
-            message: userMessage,
-            file: fileData ? JSON.stringify({
-              name: fileData.name,
-              mimeType: fileData.mimeType,
-              size: fileData.size
-            }) : null,
+            message: userMessage, // The text message
+            files: fileDataArray
+              ? fileDataArray.map((f) => ({
+                  name: f.name,
+                  mimeType: f.mimeType,
+                  size: f.size,
+                }))
+              : null,
             timestamp: timestamp,
             conversationId: currentConversationId,
           };
@@ -410,7 +432,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
       } else if (action === "send_message") {
         // ... (send_message action handler - no changes) ...
         const userMessage = data.message?.trim();
-        const fileData = data.file;
+        const fileDataArray = data.files;
 
         if (!userMessage && !fileData) {
           sendError(ws, "No message or file provided", "input_validation");
@@ -418,16 +440,37 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         }
 
         // Validate file data if present
-        if (fileData) {
-          if (fileData.size > 4 * 1024 * 1024) {
-            sendError(ws, "File size exceeds 4MB limit", "file_validation");
-            return;
-          }
-          if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(fileData.mimeType)) {
-            sendError(ws, "Invalid file type", "file_validation");
-            return;
-          }
-        }
+        // if (fileDataArray) {
+        //   // const allowedMimeTypes = [
+        //   //   "image/png",
+        //   //   "image/jpeg",
+        //   //   "image/webp",
+        //   //   "image/heic",
+        //   //   "image/heif",
+        //   //   "application/pdf",
+        //   //   "application/x-javascript",
+        //   //   "text/javascript",
+        //   //   "application/x-python",
+        //   //   "text/x-python",
+        //   //   "text/plain",
+        //   //   "text/html",
+        //   //   "text/css",
+        //   //   "text/md",
+        //   //   "text/csv",
+        //   //   "text/xml",
+        //   //   "text/rtf",
+        //   // ];
+
+        //   // // In both send_message and continue_conversation handlers:
+        //   // if (fileData.size > 20 * 1024 * 1024) {
+        //   //   sendError(ws, "File size exceeds 20MB limit", "file_validation");
+        //   //   return;
+        //   // }
+        //   // if (!allowedMimeTypes.includes(fileData.mimeType)) {
+        //   //   sendError(ws, "Invalid file type", "file_validation");
+        //   //   return;
+        //   // }
+        // }
 
         let currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
@@ -462,7 +505,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             chat,
             userMessage,
             ws,
-            fileData
+            fileDataArray
           );
           const htmlResponse = geminiService.md.render(botResponse);
           const timestamp = Date.now();
@@ -470,12 +513,14 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           const messageToSaveUser = {
             userId: userId,
             type: "user",
-            message: userMessage,
-            file: fileData ? JSON.stringify({
-              name: fileData.name,
-              mimeType: fileData.mimeType,
-              size: fileData.size
-            }) : null,
+            message: userMessage, // The text message
+            files: fileDataArray
+              ? fileDataArray.map((f) => ({
+                  name: f.name,
+                  mimeType: f.mimeType,
+                  size: f.size,
+                }))
+              : null,
             timestamp: timestamp,
             conversationId: currentConversationId,
           };
@@ -624,11 +669,11 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
 };
 async function createNewConversation(pool, userId, name) {
   // ... (createNewConversation function - no changes) ...
-  let input = name.toString().substring(0, 50);  
+  let input = name.toString().substring(0, 50);
   if (input.includes("-")) {
-        const parts = input.split("-", 2); // Split into two parts
-        input = parts[1].trim(); // Grab text after hyphen and trim
-    }
+    const parts = input.split("-", 2); // Split into two parts
+    input = parts[1].trim(); // Grab text after hyphen and trim
+  }
 
   const db_name = input;
   try {
@@ -654,13 +699,16 @@ async function saveMessage(pool, message) {
   try {
     const conn = await pool.getConnection();
     const [result] = await conn.execute(
-      "INSERT INTO messages (conversationId, userId, type, message, timestamp) VALUES (?, ?, ?, ?, ?)",
+      `INSERT INTO messages 
+       (conversationId, userId, type, message, timestamp, files) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
         message.conversationId,
         message.userId,
         message.type,
         message.message,
         message.timestamp,
+        message.files ? JSON.stringify(message.files) : null,
       ]
     );
     conn.release();

@@ -788,78 +788,108 @@ uploadButton.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", handleFileSelect);
 
 function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
 
+  const container = document.getElementById("input-preview-container");
+  container.innerHTML = "";
 
   // Validate file type and size
-  const validTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "application/pdf",
-  ];
-  if (!validTypes.includes(file.type)) {
-    displayError("Invalid file type. Only images and PDFs are allowed.");
-    return;
-  }
+  files.forEach((file) => {
+    // Validate file size
+    if (file.size > 20 * 1024 * 1024) {
+      displayError("File size too large. Maximum 20MB allowed.");
+      return;
+    }
 
-  if (file.size > 4 * 1024 * 1024) {
-    // 4MB limit
-    displayError("File size too large. Maximum 4MB allowed.");
-    return;
-  }
+    const preview = document.createElement("div"); // Moved inside the loop
+    preview.className = "file-preview";
 
-  const container = document.getElementById('input-preview-container');
-  container.innerHTML = '';
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "remove-file";
+    removeBtn.innerHTML = "×";
 
-  // Create preview element
-  const preview = document.createElement('div');
-  preview.className = 'file-preview';
+    // Fixed removal handler using proper closure
+    removeBtn.onclick = () => {
+      // Remove the preview element
+      console.log("Remove file:", file.name);
+      preview.remove();
+
+      // Update the file input files
+      const newFiles = Array.from(fileInput.files).filter((f) => f !== file);
+      const dataTransfer = new DataTransfer();
+      newFiles.forEach((f) => dataTransfer.items.add(f));
+      fileInput.files = dataTransfer.files;
+    };
+
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.alt = file.name;
+        preview.appendChild(img);
+        preview.appendChild(removeBtn);
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type === "application/pdf") {
+      const fileMeta = document.createElement("div");
+      fileMeta.className = "file-meta";
+      fileMeta.textContent = `📄 ${file.name}`;
+      preview.appendChild(fileMeta);
+      preview.appendChild(removeBtn);
+    } else {
+      const fileMeta = document.createElement("div");
+      fileMeta.className = "file-meta";
+      fileMeta.textContent = `📝 ${file.name}`;
+      preview.appendChild(fileMeta);
+      preview.appendChild(removeBtn);
+    }
+
+    container.appendChild(preview);
+  });
+
+  // // Create preview element
+  // const preview = document.createElement('div');
+  // preview.className = 'file-preview';
 
   // Create remove button
-  const removeBtn = document.createElement('button');
-  removeBtn.className = 'remove-file';
-  removeBtn.innerHTML = '×';
-  removeBtn.onclick = () => {
-    console.log('Remove file');
-    container.innerHTML = '';
-    fileInput.value = '';
-    currentFile = null;
-  };
-
-  // Handle image files
-  if (file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      // Create image element inside preview div
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.alt = file.name;
-      preview.appendChild(img);
-      preview.appendChild(removeBtn);
-    };
-    reader.readAsDataURL(file);
-  } 
-  // Handle PDF files
-  else {
-    const fileMeta = document.createElement('div');
-    fileMeta.className = 'file-meta';
-    fileMeta.textContent = `📄 ${file.name}`;
-    preview.appendChild(fileMeta);
-    preview.appendChild(removeBtn);
-  }
-
-  container.appendChild(preview);
-
-  currentFile = file;
-
-  // currentFile = {
-  //   name: file.name,
-  //   type: file.type,
-  //   size: file.size
+  // const removeBtn = document.createElement('button');
+  // removeBtn.className = 'remove-file';
+  // removeBtn.innerHTML = '×';
+  // removeBtn.onclick = () => {
+  //   console.log('Remove file');
+  //   container.innerHTML = '';
+  //   fileInput.value = '';
+  //   currentFile = null;
   // };
-  // showFilePreview(file);
+
+  // // Handle image files
+  // if (file.type.startsWith('image/')) {
+  //   const reader = new FileReader();
+  //   reader.onload = (e) => {
+  //     // Create image element inside preview div
+  //     const img = document.createElement('img');
+  //     img.src = e.target.result;
+  //     img.alt = file.name;
+  //     preview.appendChild(img);
+  //     preview.appendChild(removeBtn);
+  //   };
+  //   reader.readAsDataURL(file);
+  // }
+  // // Handle PDF files
+  // else {
+  //   const fileMeta = document.createElement('div');
+  //   fileMeta.className = 'file-meta';
+  //   fileMeta.textContent = `📄 ${file.name}`;
+  //   preview.appendChild(fileMeta);
+  //   preview.appendChild(removeBtn);
+  // }
+
+  // container.appendChild(preview);
+
+  currentFile = files;
+  console.log("Selected files:", currentFile);
 }
 
 function showFilePreview(file) {
@@ -896,31 +926,45 @@ window.removeCurrentFile = () => {
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = chatInput.value.trim();
+  const files = Array.from(fileInput.files);
 
-  if (!message && !currentFile) return;
+  if (!message && files.length === 0) return;
 
-  let fileData = null;
-  if (currentFile) {
-    const reader = new FileReader();
-    fileData = await new Promise((resolve) => {
-      reader.onload = () =>
-        resolve({
-          name: currentFile.name,
-          mimeType: currentFile.type,
-          data: reader.result.split(",")[1],
-          size: currentFile.size,
-        });
-      reader.readAsDataURL(currentFile);
-    });
+  const fileDataArray = [];
+  if (files.length > 0) {
+    showLoading("Uploading files...");
+    for (const file of files) {
+      const fileData = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () =>
+          resolve({
+            name: file.name,
+            mimeType: file.type,
+            data: reader.result.split(",")[1],
+            size: file.size,
+          });
+        reader.readAsDataURL(file);
+      });
+      fileDataArray.push(fileData);
+    }
   }
 
   let messageContent = message;
-  if (fileData) {
-    if (fileData.mimeType.startsWith("image/")) {
-      messageContent += `<img src="data:${fileData.mimeType};base64,${fileData.data}" alt="${fileData.name}" style="max-width:100%;border-radius:var(--border-radius);margin-top:0.5rem;">`;
-    } else {
-      messageContent += `<div class="file-meta" style="margin-top:0.5rem;">📄 ${fileData.name}</div>`;
-    }
+
+  if (fileDataArray && fileDataArray.length > 0) {
+    fileDataArray.forEach((fileData) => {
+      if (fileData.mimeType.startsWith("image/")) {
+        messageContent += `<img src="data:${fileData.mimeType};base64,${fileData.data}" 
+                              alt="${fileData.name}" 
+                              style="max-width:100%;border-radius:var(--border-radius);margin-top:0.5rem;">`;
+      } else {
+        // Use appropriate icons for different file types
+        const icon = fileData.mimeType === "application/pdf" ? "📄" : "📁";
+        messageContent += `<div class="file-meta" style="margin-top:0.5rem;">
+                          ${icon} ${fileData.name}
+                        </div>`;
+      }
+    });
   }
 
   if (currentFile) {
@@ -931,7 +975,7 @@ chatForm.addEventListener("submit", async (e) => {
     const payload = {
       action: "send_message",
       message: message,
-      file: fileData,
+      files: fileDataArray,
     };
     console.log("Sending message payload:", payload);
     socket.send(JSON.stringify(payload));
@@ -955,7 +999,7 @@ chatForm.addEventListener("submit", async (e) => {
     const payload = {
       action: "continue_conversation",
       message: message,
-      file: fileData,
+      files: fileDataArray,
       conversationId: selectedConversationId,
     };
     console.log("Sending message payload:", payload);
