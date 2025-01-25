@@ -59,7 +59,8 @@ const getChatHistory = (clientAddress) => {
 };
 
 const getChatHistoryBySocket = (ws) => {
-  return socketToSession.get(ws)?.chatHistory;
+  const session = socketToSession.get(ws);
+  return session?.chatHistory || null;
 };
 
 const deleteSession = (clientAddress) => {
@@ -139,6 +140,7 @@ const getCurrentConversationIdBySocket = (ws) => {
   }
   return null;
 };
+
 
 module.exports = {
   chatHistories,

@@ -389,9 +389,10 @@ padding-bottom: 0;
   color: var(--text-primary);
   outline: none;
   transition: border-color 0.3s ease;
+  font-family:  "Poppins", sans-serif;
 
   min-height: 3rem; /* Minimum height */
-  max-height: 10rem; /* Maximum height before scrolling */
+  max-height: 30rem; /* Maximum height before scrolling */
   overflow-y: auto; /* Show scrollbar when content exceeds max height */
   resize: none; /* Disable manual resizing */
   transition: height 0.2s ease-out;
@@ -1256,7 +1257,7 @@ padding-bottom: 0;
   background: currentColor;
   margin-left: 2px;
   vertical-align: text-bottom;
-  animation: blink 1.2s infinite;
+  animation: blink 0.5s infinite;
   opacity: 0.7;
 }
 
@@ -1589,4 +1590,101 @@ input[type="range"].form-group__input::-webkit-slider-thumb:hover {
   #chatbot-customization-dialog .auth-container__title {
     font-size: 1.3rem;
   }
-}s
+}
+.chat-messages {
+  scroll-behavior: smooth;
+  overflow-anchor: none;
+}
+
+.message:last-child {
+  overflow-anchor: auto;
+}
+
+/* Dynamic Select Styling */
+#task-select {
+  transition: all 0.3s ease;
+}
+
+/* Description Textarea */
+#description-input {
+  resize: vertical;
+  min-height: 100px;
+  padding: 1rem;
+  line-height: 1.5;
+}
+
+/* Task Type Animation */
+.form-group__label {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  #task-type-select, #task-select {
+    font-size: 0.9rem;
+  }
+  
+  #description-input {
+    min-height: 80px;
+  }
+}
+
+/* Model Indicator */
+.model-indicator {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.model-indicator__icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.model-indicator__icon--flash {
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff8860;
+}
+
+.model-indicator__icon--pro {
+  background: #8b5cf6;
+  box-shadow: 0 0 8px #8b5cf660;
+}
+
+
+/* In styles.css */
+.action-btn[data-action="copy raw markdown"] {
+  color: #c084fc; /* Matching purple accent */
+  border: 1px solid rgba(192, 132, 252, 0.2);
+}
+
+.action-btn[data-action="copy raw markdown"]:hover {
+  background: rgba(192, 132, 252, 0.1);
+}
+
+/* Add to existing action button styles */
+.action-btn[data-action="copy raw markdown"] {
+  color: #8b5cf6; /* Use primary color */
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.action-btn[data-action="copy raw markdown"]:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed; /* Darker purple on hover */
+}
+
+/* Add icon alignment fix */
+.action-btn i.fab {
+  font-size: 0.9em; /* Match other icons */
+  vertical-align: middle;
+}

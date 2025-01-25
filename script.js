@@ -52,8 +52,10 @@ const chatbotCustomizationDialog = document.getElementById(
   "chatbot-customization-dialog"
 );
 
+let lastBotRawMarkdown = "";
+
 // Add these variables at the top
-let streamBuffer = '';
+let streamBuffer = "";
 let currentStreamMessageId = null;
 let currentStreamConversationId = null;
 let renderDebounce = null;
@@ -70,30 +72,72 @@ const temperatureInput = document.getElementById("temperature-input");
 const aiModelSelect = document.getElementById("ai-model-select");
 const topPInput = document.getElementById("top-p-input");
 
+const taskSelect = document.getElementById("task-select");
+
+const taskOptions = {
+  assignment: ["Assignment Helper", "Resource Recommendation"],
+  research: [
+    "Research Paper Generation",
+    "Multi-source Research",
+    "Source Summarization",
+    "Quote Generation/Extraction",
+    "Argument Builder",
+  ],
+  writing: [
+    "AI Writer",
+    "Paraphrasing",
+    "Plagiarism Remover",
+    "Citation/Reference Generator",
+    "Thesis Generator",
+  ],
+  study: ["Study Helper", "Practice Exam Creation"],
+  project_work: ["Project Work Creation", "Reference Generator"],
+};
 
 // Add at the top with other element selectors
-const sidebarCollapseToggle = document.getElementById('sidebar-collapse-toggle');
+const sidebarCollapseToggle = document.getElementById(
+  "sidebar-collapse-toggle"
+);
 
 // Add this event listener
-sidebarCollapseToggle.addEventListener('click', (e) => {
+sidebarCollapseToggle.addEventListener("click", (e) => {
   e.stopPropagation();
-  sidebar.classList.toggle('collapsed');
-  
+  sidebar.classList.toggle("collapsed");
+
   // Only handle desktop behavior
   if (window.innerWidth > 768) {
-    if (sidebar.classList.contains('collapsed')) {
-      localStorage.setItem('sidebarCollapsed', 'true');
+    if (sidebar.classList.contains("collapsed")) {
+      localStorage.setItem("sidebarCollapsed", "true");
     } else {
-      localStorage.removeItem('sidebarCollapsed');
+      localStorage.removeItem("sidebarCollapsed");
     }
   }
 });
 
-// Add this to initialize state
-if (localStorage.getItem('sidebarCollapsed') && window.innerWidth > 768) {
-  sidebar.classList.add('collapsed');
+function initializeSidebar() {
+  const isDesktop = window.innerWidth > 768;
+
+  // Set default state to collapsed for first visit
+  if (!localStorage.getItem("sidebarCollapsed") && isDesktop) {
+    localStorage.setItem("sidebarCollapsed", "true");
+  }
+
+  // Apply collapsed state if needed
+  if (localStorage.getItem("sidebarCollapsed") === "true" && isDesktop) {
+    sidebar.classList.add("collapsed");
+  }
 }
 
+// Call on initial load
+initializeSidebar();
+
+// Call on window resize
+window.addEventListener("resize", () => {
+  initializeSidebar();
+  if (window.innerWidth <= 768) {
+    sidebar.classList.remove("collapsed");
+  }
+});
 
 function autoResizeTextarea() {
   const textarea = chatInput;
@@ -120,12 +164,13 @@ function handleStreamChunk(responseData) {
   }
 
   hideLoading();
-
+  chatbotCustomizationDialog.classList.add("hidden");
+  chatApp.classList.remove("hidden");
   // Debounced rendering for better performance
   clearTimeout(renderDebounce);
   renderDebounce = setTimeout(() => {
     updateStreamDisplay(streamBuffer, responseData.conversationId);
-  }, 100); // Render at 10fps max
+  }, 30); // Render at 10fps max
 }
 
 function createMessageContainer(conversationId) {
@@ -149,16 +194,15 @@ function updateStreamDisplay(content, conversationId) {
 
   const contentDiv = messageDiv.querySelector(".message__content");
   contentDiv.innerHTML = markdown.toHTML(content);
-  
+
   // Manually apply Highlight.js to code blocks
-  contentDiv.querySelectorAll('pre code').forEach((block) => {
+  contentDiv.querySelectorAll("pre code").forEach((block) => {
     hljs.highlightElement(block);
   });
   // Add temporary cursor
   if (!contentDiv.querySelector(".streaming-cursor")) {
     contentDiv.innerHTML += '<span class="streaming-cursor"></span>';
   }
-
 
   // Highlight code blocks incrementally
   contentDiv.querySelectorAll("pre code").forEach((block) => {
@@ -167,38 +211,43 @@ function updateStreamDisplay(content, conversationId) {
       block.dataset.highlighted = "true";
     }
   });
-  // const shouldScroll = chatMessages.scrollTop + chatMessages.clientHeight >= 
+  // const shouldScroll = chatMessages.scrollTop + chatMessages.clientHeight >=
   //                      chatMessages.scrollHeight - 50;
 
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  const isNearBottom =
+    chatMessages.scrollHeight - chatMessages.clientHeight <=
+    chatMessages.scrollTop + 100;
+
+  if (isNearBottom) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
 }
 
 function finalizeStream(responseData) {
   const messageDiv = chatMessages.querySelector(
     `[data-message-id="${currentStreamMessageId}"]`
   );
+
+  
   if (messageDiv) {
     messageDiv.classList.remove("streaming");
     messageDiv.querySelector(".message__content").innerHTML =
       responseData.message;
     hljs.highlightAll();
   }
-    lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
-  
+  lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
 
-    messageDiv.querySelectorAll("pre code").forEach((codeBlock) => {
-      const pre = codeBlock.closest("pre");
-      const copyBtn = createCodeCopyButton(codeBlock);
-      pre.style.position = "relative";
-      pre.appendChild(copyBtn);
-      hljs.highlightBlock(codeBlock);
-    });
+  messageDiv.querySelectorAll("pre code").forEach((codeBlock) => {
+    const pre = codeBlock.closest("pre");
+    const copyBtn = createCodeCopyButton(codeBlock);
+    pre.style.position = "relative";
+    pre.appendChild(copyBtn);
+    hljs.highlightBlock(codeBlock);
+  });
 
+  lastBotRawMarkdown = responseData.message || streamBuffer;
 
   actionButtons.classList.remove("hidden");
-
-
-
 
   // Reset stream state
   streamBuffer = "";
@@ -207,6 +256,35 @@ function finalizeStream(responseData) {
   hideTypingIndicator();
   toggleButtonLoading(false);
 }
+
+document.getElementById("copy-raw-btn").addEventListener("click", () => {
+  if (!lastBotRawMarkdown) return;
+console.log("Copying raw markdown:", lastBotRawMarkdown);
+  try {
+    // Create temporary textarea
+    const tempTextArea = document.createElement("textarea");
+    tempTextArea.value = lastBotRawMarkdown;
+    tempTextArea.style.position = "absolute";
+    tempTextArea.style.left = "-9999px";
+    tempTextArea.style.top = "-9999px";
+    document.body.appendChild(tempTextArea);
+
+    // Select and copy
+    tempTextArea.select();
+    document.execCommand("copy");
+
+    // Cleanup
+    document.body.removeChild(tempTextArea);
+
+    // Visual feedback
+    const copyBtn = document.getElementById("copy-raw-btn");
+    copyBtn.classList.add("copied");
+    setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+  } catch (err) {
+    console.error("Failed to copy raw markdown:", err);
+    displayError("Failed to copy raw markdown", "copy_error");
+  }
+});
 
 function handleStreamError(responseData) {
   const errorDiv = document.createElement("div");
@@ -317,7 +395,7 @@ socket.onmessage = (event) => {
       hideLoading(); // ADDED: Hide loading overlay here!
       socket.send(JSON.stringify({ action: "load_previous_conversations" }));
       if (messageContent) {
-        addMessageToChat(messageContent, "bot"); // Display initial bot message if provided
+        // addMessageToChat(messageContent, "bot"); // Display initial bot message if provided
       }
       if (window.innerWidth > 768) {
         socket.send(JSON.stringify({ action: "load_previous_conversations" }));
@@ -445,6 +523,47 @@ socket.onmessage = (event) => {
     console.error("Error handling message:", error);
   }
 };
+
+document.addEventListener("keydown", function (event) {
+  // Check if Ctrl key and Enter key are pressed simultaneously
+  if (event.ctrlKey && event.key === "Enter") {
+    // Submit the form
+    chatForm.dispatchEvent(new Event("submit"));
+  } else if (event.key === "Escape") {
+    // Clear the input field
+    chatInput.value = "";
+  } else if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "c") {
+    if (!lastBotMessage) return;
+
+    try {
+      const plainText = stripMarkdown(lastBotMessage);
+
+      // Create a temporary textarea element
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = plainText;
+      // Make it invisible
+      tempTextArea.style.position = "absolute";
+      tempTextArea.style.left = "-9999px";
+      tempTextArea.style.top = "-9999px";
+      document.body.appendChild(tempTextArea);
+
+      // Select and copy the text
+      tempTextArea.select();
+      document.execCommand("copy");
+
+      // Remove the temporary textarea
+      document.body.removeChild(tempTextArea);
+
+      // Provide feedback
+      const copyBtn = document.getElementById("copy-btn");
+      copyBtn.classList.add("copied");
+      setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      displayError("Failed to copy to clipboard", "copy_error");
+    }
+  }
+});
 
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -651,7 +770,9 @@ function addMessageToChat(
   if (type === "bot") {
     lastBotMessage = messageContentDiv.innerHTML;
     console.log("Last bot message:", lastBotMessage);
+    lastBotRawMarkdown = message;
     actionButtons.classList.remove("hidden");
+    
   } else {
     actionButtons.classList.add("hidden");
   }
@@ -884,13 +1005,15 @@ toggleLoginFromForgot.addEventListener("click", (e) => {
   resetPasswordDiv.classList.add("hidden");
 });
 
-document.querySelectorAll(".action-btn:not(#copy-btn)").forEach((btn) => {
-  btn.addEventListener("click", (e) => {
-    const actionText = e.currentTarget.dataset.action;
-    chatInput.value = actionText;
-    chatForm.dispatchEvent(new Event("submit"));
+document
+  .querySelectorAll(".action-btn:not(#copy-btn):not(#copy-raw-btn)")
+  .forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const actionText = e.currentTarget.dataset.action;
+      chatInput.value = actionText;
+      chatForm.dispatchEvent(new Event("submit"));
+    });
   });
-});
 
 document.getElementById("copy-btn").addEventListener("click", () => {
   if (!lastBotMessage) return;
@@ -1172,6 +1295,19 @@ chatForm.addEventListener("submit", async (e) => {
   }
 });
 
+// Update task options when task type changes
+taskTypeSelect.addEventListener("change", () => {
+  const selectedType = taskTypeSelect.value;
+  taskSelect.innerHTML = taskOptions[selectedType]
+    .map(
+      (option) =>
+        `<option value="${option
+          .toLowerCase()
+          .replace(/ /g, "_")}">${option}</option>`
+    )
+    .join("");
+});
+
 // Advanced settings drawer toggle
 advancedSettingsToggle.addEventListener("click", () => {
   advancedSettingsDrawer.classList.toggle("hidden");
@@ -1184,8 +1320,8 @@ advancedSettingsToggle.addEventListener("click", () => {
 customizationForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const taskType = taskTypeSelect.value;
-  const subject = subjectSelect.value;
-  const topic = topicInput.value;
+  const task = taskSelect.value;
+  const description = document.getElementById("description-input").value;
   const temperature = parseFloat(temperatureInput.value);
   const aiModel = aiModelSelect.value;
   const topP = parseFloat(topPInput.value);
@@ -1193,8 +1329,8 @@ customizationForm.addEventListener("submit", (e) => {
   const customizationPayload = {
     action: "customize_conversation",
     taskType: taskType,
-    subject: subject,
-    topic: topic,
+    task: task,
+    description: description,
     temperature: temperature,
     aiModel: aiModel,
     topP: topP,
@@ -1214,6 +1350,7 @@ cancelCustomizationButton.addEventListener("click", () => {
 
 newChatButton.addEventListener("click", () => {
   // Show customization dialog instead of directly starting new chat
+  socket.send(JSON.stringify({ action: "new_chat" }));
   chatbotCustomizationDialog.classList.remove("hidden");
   actionButtons.classList.add("hidden");
   chatApp.classList.add("hidden");

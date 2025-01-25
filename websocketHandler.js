@@ -177,6 +177,9 @@ const handleAction = async (ws, pool, data) => {
 
 const setupMessageHandling = (ws, pool, userId, clientAddress) => {
   ws.on("message", async (messageString) => {
+
+    // console.log("Received message on server during WS", sessionManager.logSocketToSession(ws));
+
     sessionManager.updateActivityBySocket(ws);
     try {
       const data = JSON.parse(messageString);
@@ -207,9 +210,24 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         // ... (new_chat action handler - no changes) ...
         console.log(`new chat request received from ${clientAddress}`);
         sessionManager.setCurrentConversationIdBySocket(ws, null);
+
+
+        sessionManager.createSession(
+          clientAddress,
+          geminiService.model,
+          geminiService.generationConfig,
+          geminiService.systemInstruction,
+          userId,
+          ws
+        );
+        // setupMessageHandling(ws, pool, userId, clientAddress);
+
+        // console.log("socket to session:", sessionManager.logSocketToSession()); 
         const currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
+
         const currentChat = sessionManager.getChatHistoryBySocket(ws);
+        console.log('new_chat currentChat:', currentChat);
         if (
           currentConversationId &&
           currentChat &&
@@ -233,11 +251,12 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         console.log(
           `customize_conversation request received from ${clientAddress}`
         );
-        const { taskType, subject, topic, temperature, aiModel, topP } = data;
+        const { taskType, task, description, temperature, aiModel, topP } =
+          data;
 
-        // 1. Retrieve System Instruction based on taskType
+        // Get system instruction based on task
         const systemInstruction =
-          geminiService.getSystemInstructionForTaskType(taskType);
+          geminiService.getSystemInstructionForTask(task);
 
         // 2. Update Session Configuration
         const chatSession = sessionManager.getChatHistoryBySocket(ws);
@@ -250,16 +269,21 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           chatSession.params.systemInstruction = {
             parts: [{ text: systemInstruction }],
           };
+          console.log("System Instruction:", systemInstruction);
+          console.log(
+            "Generation Config:",
+            chatSession.params.generationConfig
+          );
         }
 
         // 3. Construct Initial Prompt
-        const initialPrompt = `Subject: ${subject}. Topic: ${topic}. Task Type: ${taskType}. Please provide assistance with this schoolwork task.`;
+        const initialPrompt = description;
 
         // 4. Create new conversation and get conversation ID
         const conversationId = await createNewConversation(
           pool,
           userId,
-          `${taskType} - ${topic}`
+          `${task} - ${description}`
         );
         sessionManager.setCurrentConversationIdBySocket(ws, conversationId);
 
@@ -476,6 +500,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           sessionManager.getCurrentConversationIdBySocket(ws);
 
         let chat = sessionManager.getChatHistoryBySocket(ws);
+
+        console.log("chatHistory: ", chat);
         if (!currentConversationId) {
           currentConversationId = await createNewConversation(
             pool,

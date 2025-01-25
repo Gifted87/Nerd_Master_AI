@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gifted's AI Chat</title>
+    <title>Nerd Master AI</title>
+    <link
+      rel="icon"
+      href="https://i.ibb.co/6ZmXSWV/icons8-graduation-cap-96-1.png"
+      type="image/png"
+    />
+
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -42,42 +48,32 @@
             <label class="form-group__label" for="task-type-select"
               >Task Type</label
             >
-            <select class="form-group__input" id="task-type-select">
+            <select class="form-group__input" id="task-type-select" required>
+              <option value="">Select A Task Type</option>
               <option value="assignment">Assignment</option>
+              <option value="research">Research</option>
+              <option value="writing">Writing</option>
+              <option value="study">Study</option>
               <option value="project_work">Project Work</option>
-              <option value="essay">Essay</option>
-              <option value="research_paper">Research Paper</option>
-              <option value="maths">Maths</option>
-              <option value="reading_comprehension">
-                Reading Comprehension
-              </option>
             </select>
           </div>
           <div class="auth-form__group form-group">
-            <label class="form-group__label" for="subject-select"
-              >Subject</label
+            <label class="form-group__label" for="task-select">Task</label>
+            <select class="form-group__input" id="task-select" required>
+              <option value="">Select a Task Type first</option>
+            </select>
+          </div>
+          <div class="auth-form__group form-group">
+            <label class="form-group__label" for="description-input"
+              >Description</label
             >
-            <select class="form-group__input" id="subject-select">
-              <option value="social_science">Social Science</option>
-              <option value="history">History</option>
-              <option value="english_language_arts">
-                English Language Arts
-              </option>
-              <option value="mathematics">Mathematics</option>
-              <option value="science">Science</option>
-              <option value="arts">Arts</option>
-              <option value="commerce">Commerce</option>
-            </select>
-          </div>
-          <div class="auth-form__group form-group">
-            <label class="form-group__label" for="topic-input">Topic</label>
-            <input
-              type="text"
+            <textarea
               class="form-group__input"
-              id="topic-input"
-              placeholder="Enter topic"
+              id="description-input"
+              placeholder="Describe your requirements..."
               required
-            />
+              rows="4"
+            ></textarea>
           </div>
 
           <!-- Advanced Settings Drawer -->
@@ -107,13 +103,13 @@
                   value="1"
                 />
               </div>
-              <div class="auth-form__group form-group">
+              <div class="auth-form__group form-group" style="display: none">
                 <label class="form-group__label" for="ai-model-select"
                   >AI Model</label
                 >
                 <select class="form-group__input" id="ai-model-select">
                   <option value="gemini-2.0-flash-exp">Gemini Flash</option>
-                  <option value="gemini-pro">Gemini Pro (Default)</option>
+                  <option value="gemini-pro">Gemini Pro</option>
                   <!-- Add more models here -->
                 </select>
               </div>
@@ -133,7 +129,7 @@
           </div>
 
           <button type="submit" class="auth-form__button auth-button">
-            Start Chat
+            Start Session
           </button>
         </form>
         <!-- Cancel Button -->
@@ -144,7 +140,7 @@
           id="cancel-customization-button"
           style="align-self: center; justify-self: center; width: 100%"
         >
-          Go to Casual Chat
+          Just Chat
         </button>
       </div>
     </div>
@@ -185,7 +181,7 @@
             <i class="fas fa-bars"></i>
           </button>
           <h1 class="chat-header__title">
-            <i class="fas fa-graduation-cap"></i> My School Bot
+            <i class="fas fa-graduation-cap"></i> Nerd Master AI
           </h1>
           <div class="sidebar__actions">
             <button
@@ -217,10 +213,7 @@
         </header>
         <section class="chat-messages" id="chat-messages">
           <div class="initial-message" id="initial-chat-message">
-            <p>Welcome to My School Bot!<br>
-            <span style="color: white; font-size: 1rem; font-weight: lighter; margin-top: 0; padding-top: 0;">
-              Your school life just got easier
-            </span></p>
+            <p>Welcome to Nerd Master AI!</p>
           </div>
           <div
             class="typing-indicator hidden"
@@ -243,14 +236,21 @@
             id="input-preview-container"
           ></div>
           <div class="action-buttons-container hidden" id="action-buttons">
-            <button class="action-btn" id="copy-btn" data-tooltip="Copy">
+            <button class="action-btn" id="copy-btn" data-tooltip="">
               <i class="far fa-copy"></i><span>Copy</span>
+            </button>
+            <button
+              class="action-btn"
+              data-action="copy raw markdown"
+              id="copy-raw-btn" style="display: none;"
+            >
+              <i class="fab fa-markdown"></i><span>Raw MD</span>
             </button>
 
             <button
               class="action-btn"
               data-action="regenerate this response"
-              data-tooltip="Regenerate"
+              data-tooltip=""
             >
               <i class="fas fa-sync-alt"></i><span>Regenerate</span>
             </button>
@@ -258,7 +258,7 @@
             <button
               class="action-btn"
               data-action="continue from where you stopped"
-              data-tooltip="Continue"
+              data-tooltip=""
             >
               <i class="fas fa-play"></i><span>Continue</span>
             </button>
@@ -266,7 +266,7 @@
             <button
               class="action-btn"
               data-action="Give me more"
-              data-tooltip="More"
+              data-tooltip=""
             >
               <i class="fas fa-play"></i><span>More</span>
             </button>
@@ -274,33 +274,32 @@
             <button
               class="action-btn"
               data-action="make it shorter"
-              data-tooltip="Shorter"
+              data-tooltip=""
             >
               <i class="fas fa-compress-alt"></i><span>Shorter</span>
             </button>
             <button
               class="action-btn"
               data-action="make it longer"
-              data-tooltip="Longer"
+              data-tooltip=""
             >
               <i class="fas fa-expand-alt"></i><span>Longer</span>
             </button>
             <button
               class="action-btn"
               data-action="Give me a summary of this"
-              data-tooltip="Summarize"
+              data-tooltip=""
             >
               <i class="fas fa-scroll"></i><span>Summarize</span>
             </button>
 
-            <button
-              class="action-btn"
-              data-action="rephrase"
-              data-tooltip="Rephrase"
-            >
+            <button class="action-btn" data-action="rephrase" data-tooltip="">
               <i class="fas fa-paragraph"></i><span>Rephrase</span>
             </button>
-
+            <button class="action-btn" data-action="sound more creative">
+              <i class="fas fa-paint-brush"></i>
+              <span>Creative</span>
+            </button>
             <button class="action-btn" data-action="sound more professional">
               <i class="fas fa-briefcase"></i>
               <span>Professional</span>
@@ -308,10 +307,6 @@
             <button class="action-btn" data-action="sound more casual">
               <i class="fas fa-tshirt"></i>
               <span>Casual</span>
-            </button>
-            <button class="action-btn" data-action="sound more creative">
-              <i class="fas fa-paint-brush"></i>
-              <span>Creative</span>
             </button>
           </div>
 
@@ -490,11 +485,11 @@
       <p id="loading-text" style="color: white; margin-top: 1rem"></p>
     </div>
     <textarea id="copy-content" class="hidden"></textarea>
-                        
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown.js/0.5.0/markdown.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    
+
     <script src="./script.js"></script>
   </body>
 </html>
