@@ -48,7 +48,6 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  
 }
 
 .hidden {
@@ -112,7 +111,6 @@ body {
   /* border-radius: 1rem; */
   box-shadow: var(--shadow-md);
   overflow: hidden;
-
 }
 
 /* Sidebar */
@@ -260,8 +258,8 @@ body {
   border-radius: var(--border-radius);
   /* box-shadow: var(--shadow-sm); Subtle shadow - keeping this */
   margin: 2rem auto; /* Margin - keeping this */
-margin-bottom: 0;
-padding-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
   width: fit-content; /* Width - keeping this */
   max-width: 90%; /* Max width - keeping this */
 
@@ -303,10 +301,10 @@ padding-bottom: 0;
 }
 
 .message--bot {
-  align-self: flex-start;
+  align-self: center;
   width: 80%;
   text-align: left;
-  border-radius: 0.5rem 0.5rem 0.5rem 0rem;
+  border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
 }
 .message__timestamp {
   position: absolute;
@@ -389,7 +387,7 @@ padding-bottom: 0;
   color: var(--text-primary);
   outline: none;
   transition: border-color 0.3s ease;
-  font-family:  "Poppins", sans-serif;
+  font-family: "Poppins", sans-serif;
 
   min-height: 3rem; /* Minimum height */
   max-height: 30rem; /* Maximum height before scrolling */
@@ -602,12 +600,12 @@ padding-bottom: 0;
   }
 
   .message--bot {
-    align-self: flex-start;
+    align-self: center;
     /* width: auto; */
     flex-grow: 0;
     width: 100%;
     text-align: left;
-    border-radius: 0.5rem 0.5rem 0.5rem 0rem;
+    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
   }
 
   .sidebar-toggle-button {
@@ -724,7 +722,7 @@ padding-bottom: 0;
 #chatbot-customization-dialog .dialog-container {
   width: 90%;
   max-height: 90vh;
-  
+
   max-width: 500px; /* Slightly wider than auth container */
   text-align: left; /* Align text to the left within the dialog */
   overflow-y: auto;
@@ -891,6 +889,10 @@ padding-bottom: 0;
   color: #8b5cf6; /* Purple accent */
 }
 
+.action-btn[data-action*="Proceed"] {
+  color: #8b5cf6; /* Purple accent */
+}
+
 .action-btn[data-action*="casual"] {
   color: #4ade80; /* Green accent */
 }
@@ -931,6 +933,11 @@ padding-bottom: 0;
 }
 
 .action-btn[data-action="sound more professional"] {
+  color: #38bdf8; /* Sky Blue */
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.action-btn[data-action="Proceed"] {
   color: #38bdf8; /* Sky Blue */
   border: 1px solid rgba(56, 189, 248, 0.2);
 }
@@ -986,6 +993,10 @@ padding-bottom: 0;
 }
 
 .action-btn[data-action="sound more professional"]:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.action-btn[data-action="Proceed"]:hover {
   background: rgba(56, 189, 248, 0.1);
 }
 
@@ -1308,7 +1319,6 @@ padding-bottom: 0;
   }
 }
 
-
 /* Collapsible Sidebar */
 .sidebar__header {
   position: relative;
@@ -1362,17 +1372,16 @@ padding-bottom: 0;
   width: calc(100% - 60px);
 }
 
-
 @media (max-width: 768px) {
   .sidebar__toggle {
     display: none;
   }
-  
+
   .sidebar.collapsed {
     width: 250px;
     transform: translateX(-250px);
   }
-  
+
   .sidebar.collapsed + .chat-area {
     width: 100%;
   }
@@ -1380,7 +1389,6 @@ padding-bottom: 0;
   .sidebar:not(.collapsed) + .chat-area {
     width: 100%;
   }
-  
 }
 
 /* Add to styles.css */
@@ -1427,14 +1435,6 @@ padding-bottom: 0;
   }
 }
 
-
-
-
-
-
-
-
-
 /* Add to styles.css */
 /* Customization Dialog Restyle */
 #chatbot-customization-dialog .dialog-container {
@@ -1449,7 +1449,11 @@ padding-bottom: 0;
 #chatbot-customization-dialog .auth-container__title {
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
-  background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+  background: linear-gradient(
+    to right,
+    var(--primary-color),
+    var(--accent-color)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1560,11 +1564,7 @@ input[type="range"].form-group__input::-webkit-slider-thumb:hover {
 }
 
 #chatbot-customization-dialog .auth-form__button:hover {
-  background: linear-gradient(
-    to right,
-    var(--primary-color),
-    #7c3aed
-  );
+  background: linear-gradient(to right, var(--primary-color), #7c3aed);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -1586,7 +1586,7 @@ input[type="range"].form-group__input::-webkit-slider-thumb:hover {
     width: 95%;
     padding: 1.5rem;
   }
-  
+
   #chatbot-customization-dialog .auth-container__title {
     font-size: 1.3rem;
   }
@@ -1620,10 +1620,11 @@ input[type="range"].form-group__input::-webkit-slider-thumb:hover {
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-  #task-type-select, #task-select {
+  #task-type-select,
+  #task-select {
     font-size: 0.9rem;
   }
-  
+
   #description-input {
     min-height: 80px;
   }
@@ -1661,24 +1662,23 @@ input[type="range"].form-group__input::-webkit-slider-thumb:hover {
   box-shadow: 0 0 8px #8b5cf660;
 }
 
-
 /* In styles.css */
-.action-btn[data-action="copy raw markdown"] {
+.action-btn[data-action="Use ideal scenerio"] {
   color: #c084fc; /* Matching purple accent */
   border: 1px solid rgba(192, 132, 252, 0.2);
 }
 
-.action-btn[data-action="copy raw markdown"]:hover {
+.action-btn[data-action="Use ideal scenerio"]:hover {
   background: rgba(192, 132, 252, 0.1);
 }
 
 /* Add to existing action button styles */
-.action-btn[data-action="copy raw markdown"] {
+.action-btn[data-action="Use ideal scenerio"] {
   color: #8b5cf6; /* Use primary color */
   border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
-.action-btn[data-action="copy raw markdown"]:hover {
+.action-btn[data-action="Use ideal scenerio"]:hover {
   background: rgba(139, 92, 246, 0.1);
   color: #7c3aed; /* Darker purple on hover */
 }
@@ -1687,4 +1687,25 @@ input[type="range"].form-group__input::-webkit-slider-thumb:hover {
 .action-btn i.fab {
   font-size: 0.9em; /* Match other icons */
   vertical-align: middle;
+}
+
+.action-btn[data-action="Take the last response and rewrite it in a way that feels human-written. Use a conversational tone with varied sentence structures, natural phrasing, and occasional filler words like 'Honestly' or 'You know.' Add subtle imperfections, such as slight redundancy, minor grammar quirks, or informal transitions. Include relatable touches like shared experiences or emotions, and avoid robotic phrasing or excessive polish. Make sure the rewritten response sounds dynamic, thoughtful, and natural while maintaining its clarity and purpose."] {
+  color: #c084fc; /* Matching purple accent */
+  border: 1px solid rgba(192, 132, 252, 0.2);
+}
+
+
+.action-btn[data-action="Take the last response and rewrite it in a way that feels human-written. Use a conversational tone with varied sentence structures, natural phrasing, and occasional filler words like 'Honestly' or 'You know.' Add subtle imperfections, such as slight redundancy, minor grammar quirks, or informal transitions. Include relatable touches like shared experiences or emotions, and avoid robotic phrasing or excessive polish. Make sure the rewritten response sounds dynamic, thoughtful, and natural while maintaining its clarity and purpose."]:hover {
+  background: rgba(192, 132, 252, 0.1);
+}
+
+/* Add to existing action button styles */
+.action-btn[data-action="Take the last response and rewrite it in a way that feels human-written. Use a conversational tone with varied sentence structures, natural phrasing, and occasional filler words like 'Honestly' or 'You know.' Add subtle imperfections, such as slight redundancy, minor grammar quirks, or informal transitions. Include relatable touches like shared experiences or emotions, and avoid robotic phrasing or excessive polish. Make sure the rewritten response sounds dynamic, thoughtful, and natural while maintaining its clarity and purpose."] {
+  color: #8b5cf6; /* Use primary color */
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.action-btn[data-action="Take the last response and rewrite it in a way that feels human-written. Use a conversational tone with varied sentence structures, natural phrasing, and occasional filler words like 'Honestly' or 'You know.' Add subtle imperfections, such as slight redundancy, minor grammar quirks, or informal transitions. Include relatable touches like shared experiences or emotions, and avoid robotic phrasing or excessive polish. Make sure the rewritten response sounds dynamic, thoughtful, and natural while maintaining its clarity and purpose."]:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed; /* Darker purple on hover */
 }

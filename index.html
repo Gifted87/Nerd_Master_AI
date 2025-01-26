@@ -49,7 +49,7 @@
               >Task Type</label
             >
             <select class="form-group__input" id="task-type-select" required>
-              <option value="">Select A Task Type</option>
+              <option value="">Select a Task Type</option>
               <option value="assignment">Assignment</option>
               <option value="research">Research</option>
               <option value="writing">Writing</option>
@@ -70,7 +70,7 @@
             <textarea
               class="form-group__input"
               id="description-input"
-              placeholder="Describe your requirements..."
+              placeholder="Describe your task. The longer the description, the better the response. Be as detailed as possible."
               required
               rows="4"
             ></textarea>
@@ -100,7 +100,7 @@
                   min="0"
                   max="2"
                   step="0.1"
-                  value="1"
+                  value="0.7"
                 />
               </div>
               <div class="auth-form__group form-group" style="display: none">
@@ -122,7 +122,7 @@
                   min="0"
                   max="1"
                   step="0.05"
-                  value="0.95"
+                  value="0.5"
                 />
               </div>
             </div>
@@ -255,12 +255,22 @@
               <i class="fas fa-sync-alt"></i><span>Regenerate</span>
             </button>
 
+            
+
             <button
               class="action-btn"
-              data-action="continue from where you stopped"
+              data-action="Proceed"
               data-tooltip=""
             >
-              <i class="fas fa-play"></i><span>Continue</span>
+              <i class="fas fa-arrow-right"></i><span>Proceed</span>
+            </button>
+
+            <button
+              class="action-btn"
+              data-action="Take the last response and rewrite it in a way that feels human-written. Use a conversational tone with varied sentence structures, natural phrasing, and occasional filler words like 'Honestly' or 'You know.' Add subtle imperfections, such as slight redundancy, minor grammar quirks, or informal transitions. Include relatable touches like shared experiences or emotions, and avoid robotic phrasing or excessive polish. Make sure the rewritten response sounds dynamic, thoughtful, and natural while maintaining its clarity and purpose."
+              data-tooltip=""
+            >
+              <i class="fas fa-person"></i><span>Humanize</span>
             </button>
 
             <button
@@ -268,7 +278,23 @@
               data-action="Give me more"
               data-tooltip=""
             >
-              <i class="fas fa-play"></i><span>More</span>
+              <i class="fas fa-plus"></i><span>More</span>
+            </button>
+
+            <button
+            class="action-btn"
+            data-action="continue from where you stopped"
+            data-tooltip=""
+          >
+            <i class="fas fa-play"></i><span>Continue</span>
+          </button>
+
+            <button
+              class="action-btn"
+              data-action="Use ideal scenerio"
+              data-tooltip=""
+            >
+              <i class="fab fa-superpowers"></i><span>Use Ideal Scenerio</span>
             </button>
 
             <button
@@ -330,7 +356,7 @@
             <textarea
               class="input-area__input chat-input"
               id="chat-input"
-              placeholder="Type a message..."
+              placeholder="Type a message, then press CTRL + Enter to send or CMD + Enter on Mac"
               aria-label="Chat input"
               required
             ></textarea>

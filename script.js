@@ -78,20 +78,24 @@ const taskOptions = {
   assignment: ["Assignment Helper", "Resource Recommendation"],
   research: [
     "Research Paper Generation",
-    "Multi-source Research",
+    "Multi Source Research",
     "Source Summarization",
-    "Quote Generation/Extraction",
+    "Quote Generation and Extraction",
     "Argument Builder",
   ],
   writing: [
     "AI Writer",
     "Paraphrasing",
     "Plagiarism Remover",
-    "Citation/Reference Generator",
+    "Citation Reference Generator",
     "Thesis Generator",
   ],
   study: ["Study Helper", "Practice Exam Creation"],
-  project_work: ["Project Work Creation", "Reference Generator"],
+  project_work: [
+    "Project Work Creation",
+    "Reference Generator",
+    "Practical Report Generator",
+  ],
 };
 
 // Add at the top with other element selectors
@@ -170,7 +174,7 @@ function handleStreamChunk(responseData) {
   clearTimeout(renderDebounce);
   renderDebounce = setTimeout(() => {
     updateStreamDisplay(streamBuffer, responseData.conversationId);
-  }, 30); // Render at 10fps max
+  }, 10); // Render at 10fps max
 }
 
 function createMessageContainer(conversationId) {
@@ -228,8 +232,12 @@ function finalizeStream(responseData) {
     `[data-message-id="${currentStreamMessageId}"]`
   );
 
-  
   if (messageDiv) {
+    messageDiv.addEventListener("click", function (e) {
+      e.stopPropagation();
+      actionButtons.classList.remove("hidden");
+    });
+
     messageDiv.classList.remove("streaming");
     messageDiv.querySelector(".message__content").innerHTML =
       responseData.message;
@@ -247,8 +255,6 @@ function finalizeStream(responseData) {
 
   lastBotRawMarkdown = responseData.message || streamBuffer;
 
-  actionButtons.classList.remove("hidden");
-
   // Reset stream state
   streamBuffer = "";
   currentStreamMessageId = null;
@@ -259,7 +265,7 @@ function finalizeStream(responseData) {
 
 document.getElementById("copy-raw-btn").addEventListener("click", () => {
   if (!lastBotRawMarkdown) return;
-console.log("Copying raw markdown:", lastBotRawMarkdown);
+  console.log("Copying raw markdown:", lastBotRawMarkdown);
   try {
     // Create temporary textarea
     const tempTextArea = document.createElement("textarea");
@@ -328,6 +334,13 @@ function getQueryParam(name) {
 const tokenType = getQueryParam("type");
 const emailVerificationToken = getQueryParam("token");
 const resetPasswordToken = getQueryParam("token");
+
+socket.onclose = () => {
+  displayError(
+    "Connection Closed. please refresh the page",
+    "connection_error"
+  );
+};
 
 socket.onopen = () => {
   console.log("Connected to WebSocket server.");
@@ -771,8 +784,11 @@ function addMessageToChat(
     lastBotMessage = messageContentDiv.innerHTML;
     console.log("Last bot message:", lastBotMessage);
     lastBotRawMarkdown = message;
-    actionButtons.classList.remove("hidden");
-    
+
+    messageDiv.addEventListener("click", function (e) {
+      e.stopPropagation();
+      actionButtons.classList.remove("hidden");
+    });
   } else {
     actionButtons.classList.add("hidden");
   }
@@ -1070,7 +1086,7 @@ function handleFileSelect(e) {
   // Validate file type and size
   files.forEach((file) => {
     // Validate file size
-    if (file.size > 20 * 1024 * 1024) {
+    if (file.size > 100 * 1024 * 1024) {
       displayError("File size too large. Maximum 20MB allowed.");
       return;
     }
@@ -1441,5 +1457,15 @@ document.addEventListener("click", (event) => {
 sidebar.addEventListener("click", (event) => {
   if (window.innerWidth <= 768) {
     event.stopPropagation();
+  }
+});
+
+document.addEventListener("click", function (e) {
+  if (
+    !e.target.closest(".message--bot") &&
+    !e.target.closest("#action-buttons") &&
+    !e.target.closest(".action-btn")
+  ) {
+    actionButtons.classList.add("hidden");
   }
 });
