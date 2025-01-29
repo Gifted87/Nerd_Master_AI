@@ -808,6 +808,10 @@ function addMessageToChat(
     hljs.highlightBlock(codeBlock);
   });
 
+  MathJax.typesetPromise([messageContentDiv]).catch((err) =>
+    console.error("MathJax typesetting failed: " + err.message)
+  );
+
   const timestampSpan = document.createElement("span");
   timestampSpan.classList.add("message__timestamp");
   timestampSpan.textContent = timestamp

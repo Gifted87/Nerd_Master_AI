@@ -242,7 +242,8 @@
             <button
               class="action-btn"
               data-action="copy raw markdown"
-              id="copy-raw-btn" style="display: none;"
+              id="copy-raw-btn"
+              style="display: none"
             >
               <i class="fab fa-markdown"></i><span>Raw MD</span>
             </button>
@@ -255,13 +256,7 @@
               <i class="fas fa-sync-alt"></i><span>Regenerate</span>
             </button>
 
-            
-
-            <button
-              class="action-btn"
-              data-action="Proceed"
-              data-tooltip=""
-            >
+            <button class="action-btn" data-action="Proceed" data-tooltip="">
               <i class="fas fa-arrow-right"></i><span>Proceed</span>
             </button>
 
@@ -282,12 +277,12 @@
             </button>
 
             <button
-            class="action-btn"
-            data-action="continue from where you stopped"
-            data-tooltip=""
-          >
-            <i class="fas fa-play"></i><span>Continue</span>
-          </button>
+              class="action-btn"
+              data-action="continue from where you stopped"
+              data-tooltip=""
+            >
+              <i class="fas fa-play"></i><span>Continue</span>
+            </button>
 
             <button
               class="action-btn"
@@ -515,6 +510,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown.js/0.5.0/markdown.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ], // Configure inline delimiters if needed
+        },
+        svg: {
+          fontCache: "global",
+        },
+      };
+    </script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+    ></script>
 
     <script src="./script.js"></script>
   </body>
