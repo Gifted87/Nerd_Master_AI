@@ -1709,3 +1709,24 @@ input[type="range"].form-group__input::-webkit-slider-thumb:hover {
   background: rgba(139, 92, 246, 0.1);
   color: #7c3aed; /* Darker purple on hover */
 }
+
+.MathJax {
+  outline: 0;
+  display: inline-block !important;
+  vertical-align: middle;
+}
+
+mjx-container {
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+.mathjax-preview {
+  unicode-bidi: -moz-isolate;
+  unicode-bidi: isolate;
+}
+
+/* Fix for subscript/superscript alignment */
+mjx-sub, mjx-sup {
+  vertical-align: middle !important;
+}

@@ -177,7 +177,6 @@ const handleAction = async (ws, pool, data) => {
 
 const setupMessageHandling = (ws, pool, userId, clientAddress) => {
   ws.on("message", async (messageString) => {
-
     // console.log("Received message on server during WS", sessionManager.logSocketToSession(ws));
 
     sessionManager.updateActivityBySocket(ws);
@@ -211,7 +210,6 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         console.log(`new chat request received from ${clientAddress}`);
         sessionManager.setCurrentConversationIdBySocket(ws, null);
 
-
         sessionManager.createSession(
           clientAddress,
           geminiService.model,
@@ -222,12 +220,12 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         );
         // setupMessageHandling(ws, pool, userId, clientAddress);
 
-        // console.log("socket to session:", sessionManager.logSocketToSession()); 
+        // console.log("socket to session:", sessionManager.logSocketToSession());
         const currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
 
         const currentChat = sessionManager.getChatHistoryBySocket(ws);
-        console.log('new_chat currentChat:', currentChat);
+        console.log("new_chat currentChat:", currentChat);
         if (
           currentConversationId &&
           currentChat &&
@@ -377,7 +375,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         let currentConversationId =
           sessionManager.getCurrentConversationIdBySocket(ws);
 
-        let chat = oldConversation;
+        let chat = sessionManager.getChatHistoryBySocket(ws);
 
         if (!currentConversationId) {
           currentConversationId = await createNewConversation(
@@ -814,13 +812,15 @@ async function loadConversationMessages(pool, conversationId, ws) {
     socketToSession = sessionManager.logSocketToSession();
 
     if (socketToSession.has(ws)) {
-      const { clientAddress, chatHistory } = socketToSession.get(ws);
-      if (chatHistory) {
-        chatHistory.history = formattedHistory;
-        chatHistory._history = formattedHistory;
-        oldConversation = chatHistory;
-        sessionManager.setCurrentConversationIdBySocket(ws, conversationId);
-      }
+      sessionManager.setChatHistory(ws, formattedHistory);
+      sessionManager.setChatHistory(ws, formattedHistory);
+      // const { clientAddress, chatHistory } = socketToSession.get(ws);
+      // if (chatHistory) {
+        // chatHistory.history = formattedHistory;
+        // chatHistory._history = formattedHistory;
+        // oldConversation = chatHistory;
+        // sessionManager.setCurrentConversationIdBySocket(ws, conversationId);
+      // }
     }
 
     return rows.map((row) => ({

@@ -245,6 +245,11 @@ function finalizeStream(responseData) {
   }
   lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
 
+  console.log("mathjax: ", messageDiv, responseData.message);
+  MathJax.typesetPromise([messageDiv]).catch((err) =>
+    console.error("MathJax typesetting failed: " + err.message)
+  );
+
   messageDiv.querySelectorAll("pre code").forEach((codeBlock) => {
     const pre = codeBlock.closest("pre");
     const copyBtn = createCodeCopyButton(codeBlock);
