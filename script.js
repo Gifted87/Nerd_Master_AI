@@ -237,10 +237,9 @@ function finalizeStream(responseData) {
       e.stopPropagation();
       actionButtons.classList.remove("hidden");
     });
-
     messageDiv.classList.remove("streaming");
     messageDiv.querySelector(".message__content").innerHTML =
-      responseData.message;
+      markdown.toHTML(responseData.message);
     hljs.highlightAll();
   }
   lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
@@ -784,6 +783,7 @@ function addMessageToChat(
 
   const messageContentDiv = document.createElement("div");
   messageContentDiv.innerHTML = message;
+  // messageContentDiv.innerHTML = markdown.toHTML(message);
 
   if (type === "bot") {
     lastBotMessage = messageContentDiv.innerHTML;

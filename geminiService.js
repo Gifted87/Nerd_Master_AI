@@ -260,7 +260,8 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
     }
 
     // Finalize and save
-    const htmlResponse = md.render(fullResponse);
+    // const htmlResponse = md.render(fullResponse);
+    const htmlResponse = fullResponse
     ws.send(
       JSON.stringify({
         type: "stream_end",
