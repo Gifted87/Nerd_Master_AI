@@ -994,7 +994,7 @@ function displayError(message, errorType) {
   chatMessages.appendChild(errorDiv);
   setTimeout(() => {
     errorDiv.remove();
-  }, 5000);
+  }, 30000);
 }
 function toggleButtonLoading(isLoading) {
   streaming = true;
