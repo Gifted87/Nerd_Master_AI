@@ -373,7 +373,9 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         // }
 
         let currentConversationId =
-          sessionManager.getCurrentConversationIdBySocket(ws);
+          data.conversationId;
+
+        console.log("currentConversationId: ", currentConversationId);
 
         let chat = sessionManager.getChatHistoryBySocket(ws);
 
@@ -816,10 +818,10 @@ async function loadConversationMessages(pool, conversationId, ws) {
       sessionManager.setChatHistory(ws, formattedHistory);
       // const { clientAddress, chatHistory } = socketToSession.get(ws);
       // if (chatHistory) {
-        // chatHistory.history = formattedHistory;
-        // chatHistory._history = formattedHistory;
-        // oldConversation = chatHistory;
-        // sessionManager.setCurrentConversationIdBySocket(ws, conversationId);
+      // chatHistory.history = formattedHistory;
+      // chatHistory._history = formattedHistory;
+      // oldConversation = chatHistory;
+      // sessionManager.setCurrentConversationIdBySocket(ws, conversationId);
       // }
     }
 
