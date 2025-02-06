@@ -1,6 +1,7 @@
 hljs.highlightAll();
 
 const chatApp = document.getElementById("chat-app");
+const stopStream = document.getElementById("stop-stream");
 const authContainer = document.getElementById("auth-container");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
@@ -14,6 +15,7 @@ const logoutButton = document.getElementById("logout-button");
 const sidebar = document.getElementById("chat-sidebar");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 let oldChat = false;
+let streaming  = false;
 
 const signupForm = document.getElementById("signup-form");
 const loginForm = document.getElementById("login-form");
@@ -238,8 +240,9 @@ function finalizeStream(responseData) {
       actionButtons.classList.remove("hidden");
     });
     messageDiv.classList.remove("streaming");
-    messageDiv.querySelector(".message__content").innerHTML =
-      markdown.toHTML(responseData.message);
+    messageDiv.querySelector(".message__content").innerHTML = markdown.toHTML(
+      responseData.message
+    );
     hljs.highlightAll();
   }
   lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
@@ -265,6 +268,7 @@ function finalizeStream(responseData) {
   hideLoading();
   hideTypingIndicator();
   toggleButtonLoading(false);
+  streaming = false;
 }
 
 document.getElementById("copy-raw-btn").addEventListener("click", () => {
@@ -426,6 +430,7 @@ socket.onmessage = (event) => {
       chatMessages.innerHTML = "";
       hideLoading();
       toggleButtonLoading(false);
+      streaming = false;
     } else if (messageType === "old_chat_success") {
       console.log("new chat success conversation id", conversationId);
       selectedConversationId = conversationId;
@@ -435,6 +440,7 @@ socket.onmessage = (event) => {
       // chatMessages.innerHTML = "";
       hideLoading();
       toggleButtonLoading(false);
+      streaming = false;
     } else if (messageType === "bot") {
       addMessageToChat(
         messageContent,
@@ -447,10 +453,12 @@ socket.onmessage = (event) => {
       hideLoading();
       hideTypingIndicator();
       toggleButtonLoading(false);
+      streaming = false;
     } else if (messageType === "previous_conversations") {
       displayConversationList(responseData.conversations);
       hideLoading();
       toggleButtonLoading(false);
+      streaming = false;
       console.log(oldChat);
     } else if (messageType === "conversation_messages") {
       hideLoading();
@@ -479,6 +487,7 @@ socket.onmessage = (event) => {
       }
       hideTypingIndicator();
       toggleButtonLoading(false);
+      streaming = false;
     } else if (messageType === "message_edited") {
       const messageId = responseData.messageId;
       const newMessage = responseData.newMessage;
@@ -523,6 +532,7 @@ socket.onmessage = (event) => {
       hideLoading();
       hideTypingIndicator();
       toggleButtonLoading(false);
+      streaming = false;
 
       if (
         errorType === "signup_error" ||
@@ -987,11 +997,20 @@ function displayError(message, errorType) {
   }, 5000);
 }
 function toggleButtonLoading(isLoading) {
-  sendButton.disabled = isLoading;
+  streaming = true;
+  // sendButton.disabled = isLoading;
   sendButton.innerHTML = isLoading
-    ? '<i class="fas fa-terminal"></i> <div class="loading-spinner"></div>'
+    ? '<i class="fas fa-stop" id="stop-stream"></i> <div class="loading-spinner"></div>'
     : '<i class="fas fa-paper-plane"></i>';
 }
+
+sendButton.addEventListener("click", (e) => {
+  if(streaming) {
+    socket.send(JSON.stringify({ action: "stop_stream" }));
+    toggleButtonLoading(false);
+    return;
+  }
+});
 
 async function copyToClipboard(text) {
   try {
@@ -1227,6 +1246,15 @@ chatForm.addEventListener("submit", async (e) => {
   const files = Array.from(fileInput.files);
 
   if (!message && files.length === 0) return;
+
+  if (streaming) {
+    const payload = {
+      action: "stop_stream",
+    };
+    console.log("Stopping Stream:", payload);
+    socket.send(JSON.stringify(payload));
+    return;
+  }
 
   const fileDataArray = [];
   if (files.length > 0) {

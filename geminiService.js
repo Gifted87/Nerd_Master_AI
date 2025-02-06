@@ -23,6 +23,12 @@ if (!GOOGLE_API_KEY) {
   process.exit(1);
 }
 
+let stopStream = false;
+
+setStreamStatus = (status) => {
+  stopStream = status;
+}
+
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash-exp",
@@ -172,9 +178,9 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
     const session = sessionManager.getChatHistoryBySocket(ws);
     console.log("geminiService History:", session.history);
     if (!session) throw new Error("No active session");
-    const files=[]
+    const files = [];
     // 2. Manually append user message to history FIRST
-   
+
     const startTime = Date.now();
 
     console.log("Generating response with files:", fileDataArray);
@@ -191,7 +197,6 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
             fileUri: geminiFile.uri,
           },
         });
-
       }
       await waitForFilesActive(uploadedFiles);
     }
@@ -214,6 +219,10 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         const chunkText = chunk.text();
         fullResponse += chunkText;
 
+        if (stopStream) {
+          console.log("Stream Stopped")
+          break;
+        }
         // Send chunk immediately
         ws.send(
           JSON.stringify({
@@ -223,6 +232,8 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
           })
         );
       }
+      console.log("Stream ended");
+      setStreamStatus(false);
     } catch (streamError) {
       console.error("Stream error:", streamError);
       ws.send(
@@ -244,7 +255,6 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         conversationId: sessionManager.getCurrentConversationIdBySocket(ws),
       })
     );
-
 
     session.history.push({
       role: "user",
@@ -277,6 +287,8 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
 }
 
 module.exports = {
+  stopStream,
+  setStreamStatus,
   generateResponse,
   model,
   generationConfig,

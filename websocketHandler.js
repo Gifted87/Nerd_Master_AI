@@ -329,6 +329,9 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           );
           sendError(ws, "Error generating initial response.", "internal_error");
         }
+      } else if (action === "stop_stream") {
+        console.log("Stopping Stream");
+        geminiService.setStreamStatus(true);
       } else if (action === "continue_conversation") {
         // ... (continue_conversation action handler - no changes) ...
         const userMessage = data.message?.trim();
@@ -372,8 +375,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         //   // }
         // }
 
-        let currentConversationId =
-          data.conversationId;
+        let currentConversationId = data.conversationId;
 
         console.log("currentConversationId: ", currentConversationId);
 
