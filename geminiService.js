@@ -31,7 +31,7 @@ setStreamStatus = (status) => {
 
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-exp",
+  model: "gemini-2.0-flash-thinking-exp-01-21",
 }); // Default model
 
 const generationConfig = {
@@ -234,6 +234,7 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
       }
       console.log("Stream ended");
       setStreamStatus(false);
+      console.log("Stop Stream: ",stopStream)
     } catch (streamError) {
       console.error("Stream error:", streamError);
       ws.send(
@@ -246,8 +247,8 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
     }
 
     // Finalize and save
-    // const htmlResponse = md.render(fullResponse);
-    const htmlResponse = fullResponse;
+    const htmlResponse = md.render(fullResponse);
+    // const htmlResponse = fullResponse;
     ws.send(
       JSON.stringify({
         type: "stream_end",

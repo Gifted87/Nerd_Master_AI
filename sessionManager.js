@@ -3,7 +3,7 @@ const clientActivity = new Map();
 const userSessions = new Map(); // Maps clientAddress to userId
 const socketToSession = new Map(); // Maps WebSocket to session details (includes chat history)
 const conversationIds = new Map(); //Maps socket to conversation id
-const SESSION_TIMEOUT = 180 * 60 * 1000; // 1 hour
+const SESSION_TIMEOUT = 3000000 * 60 * 1000; // 1 hour
 
 function logSocketToSession() {
   console.log("Current socketToSession Map:");

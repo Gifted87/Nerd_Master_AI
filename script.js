@@ -15,7 +15,7 @@ const logoutButton = document.getElementById("logout-button");
 const sidebar = document.getElementById("chat-sidebar");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 let oldChat = false;
-let streaming  = false;
+let streaming = false;
 
 const signupForm = document.getElementById("signup-form");
 const loginForm = document.getElementById("login-form");
@@ -240,25 +240,13 @@ function finalizeStream(responseData) {
       actionButtons.classList.remove("hidden");
     });
     messageDiv.classList.remove("streaming");
-    messageDiv.querySelector(".message__content").innerHTML = markdown.toHTML(
-      responseData.message
-    );
-    hljs.highlightAll();
+    messageDiv.classList.add("hidden");
   }
   lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
 
   console.log("mathjax: ", messageDiv, responseData.message);
-  MathJax.typesetPromise([messageDiv]).catch((err) =>
-    console.error("MathJax typesetting failed: " + err.message)
-  );
 
-  messageDiv.querySelectorAll("pre code").forEach((codeBlock) => {
-    const pre = codeBlock.closest("pre");
-    const copyBtn = createCodeCopyButton(codeBlock);
-    pre.style.position = "relative";
-    pre.appendChild(copyBtn);
-    hljs.highlightBlock(codeBlock);
-  });
+  addMessageToChat(responseData.message, "bot");
 
   lastBotRawMarkdown = responseData.message || streamBuffer;
 
@@ -395,6 +383,7 @@ socket.onmessage = (event) => {
     if (messageType === "stream_chunk") {
       handleStreamChunk(responseData);
     } else if (messageType === "stream_end") {
+      console.log("Stream ended");
       finalizeStream(responseData);
     } else if (messageType === "stream_error") {
       handleStreamError(responseData);
@@ -483,6 +472,7 @@ socket.onmessage = (event) => {
             msg.timestamp,
             responseData.conversationId
           );
+          console.log("Old chat messages:", msg.message);
         });
       }
       hideTypingIndicator();
@@ -808,12 +798,12 @@ function addMessageToChat(
     actionButtons.classList.add("hidden");
   }
 
-  if (type === "bot" && message.includes("<img")) {
-    messageContentDiv.querySelectorAll("img").forEach((img) => {
-      img.style.maxWidth = "100%";
-      img.style.borderRadius = "var(--border-radius)";
-    });
-  }
+  // if (type === "bot" && message.includes("<img")) {
+  //   messageContentDiv.querySelectorAll("img").forEach((img) => {
+  //     img.style.maxWidth = "100%";
+  //     img.style.borderRadius = "var(--border-radius)";
+  //   });
+  // }
 
   messageContentDiv.querySelectorAll("pre code").forEach((codeBlock) => {
     const pre = codeBlock.closest("pre");
@@ -1005,7 +995,7 @@ function toggleButtonLoading(isLoading) {
 }
 
 sendButton.addEventListener("click", (e) => {
-  if(streaming) {
+  if (streaming) {
     socket.send(JSON.stringify({ action: "stop_stream" }));
     toggleButtonLoading(false);
     return;
