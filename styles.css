@@ -1130,7 +1130,7 @@ body {
 }
 
 .file-preview img {
-  max-width: 100%;
+  max-width: 30%;
   border-radius: var(--border-radius);
 }
 
@@ -1148,7 +1148,7 @@ body {
 }
 
 .message--user img {
-  max-width: 100%;
+  max-width: 30%;
   border-radius: var(--border-radius);
   margin-top: 0.5rem;
 }
@@ -1178,7 +1178,8 @@ body {
 }
 
 .file-preview img {
-  max-width: 100%;
+  max-width: 30%;
+  width: auto;
   border-radius: var(--border-radius);
 }
 
@@ -1222,7 +1223,7 @@ body {
 }
 
 .input-preview img {
-  max-width: 100%;
+  max-width: 30%;
   border-radius: var(--border-radius);
 }
 
@@ -1743,7 +1744,8 @@ mjx-sub, mjx-sup {
 }
 
 .message-image {
-  max-width: 100%; /* Limit image width to message container */
+  max-width: 30%; /* Limit image width to message container */
+  width: auto; /* Maintain aspect ratio */
   max-height: 200px; /* Limit image height */
   border-radius: var(--border-radius);
 }
