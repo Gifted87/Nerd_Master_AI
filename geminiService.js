@@ -277,7 +277,7 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
       parts: [{ text: fullResponse }],
     });
 
-    return fullResponse;
+    return { fullResponse, files: uploadedFiles };
   } catch (error) {
     console.error("Error generating response:", error);
     if (error.response) {

@@ -1730,3 +1730,20 @@ mjx-container {
 mjx-sub, mjx-sup {
   vertical-align: middle !important;
 }
+
+.files-container {
+  margin-top: 0.5rem;
+}
+
+.file-preview {
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Spacing between icon/image and filename */
+}
+
+.message-image {
+  max-width: 100%; /* Limit image width to message container */
+  max-height: 200px; /* Limit image height */
+  border-radius: var(--border-radius);
+}

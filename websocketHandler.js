@@ -406,24 +406,25 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           return;
         }
         try {
-          const botResponse = await geminiService.generateResponse(
+          const { fullResponse, files } = await geminiService.generateResponse(
             chat,
             userMessage,
             ws,
             fileDataArray
           );
-          const htmlResponse = geminiService.md.render(botResponse);
+          const htmlResponse = geminiService.md.render(fullResponse);
           const timestamp = Date.now();
 
           const messageToSaveUser = {
             userId: userId,
             type: "user",
             message: userMessage, // The text message
-            files: fileDataArray
-              ? fileDataArray.map((f) => ({
-                  name: f.name,
+            files: files
+              ? files.map((f) => ({
+                  name: f.displayName,
                   mimeType: f.mimeType,
-                  size: f.size,
+                  size: f.size, // Assuming you have size somewhere, or fetch with fileManager.
+                  fileUri: f.uri,
                 }))
               : null,
             timestamp: timestamp,
@@ -529,24 +530,25 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           return;
         }
         try {
-          const botResponse = await geminiService.generateResponse(
+          const { fullResponse, files } = await geminiService.generateResponse(
             chat,
             userMessage,
             ws,
             fileDataArray
           );
-          const htmlResponse = geminiService.md.render(botResponse);
+          const htmlResponse = geminiService.md.render(fullResponse);
           const timestamp = Date.now();
 
           const messageToSaveUser = {
             userId: userId,
             type: "user",
             message: userMessage, // The text message
-            files: fileDataArray
-              ? fileDataArray.map((f) => ({
-                  name: f.name,
+            files: files
+              ? files.map((f) => ({
+                  name: f.displayName,
                   mimeType: f.mimeType,
-                  size: f.size,
+                  size: f.size, // Assuming you have size somewhere, or fetch with fileManager.
+                  fileUri: f.uri,
                 }))
               : null,
             timestamp: timestamp,
@@ -803,15 +805,32 @@ async function loadConversationMessages(pool, conversationId, ws) {
   try {
     const conn = await pool.getConnection();
     const [rows] = await conn.execute(
-      "SELECT type, message FROM messages WHERE conversationId = ? ORDER BY timestamp ASC",
+      "SELECT type, message, files FROM messages WHERE conversationId = ? ORDER BY timestamp ASC",
       [conversationId]
     );
     conn.release();
 
-    const formattedHistory = rows.map((row) => ({
-      role: row.type === "bot" ? "model" : row.type,
-      parts: [{ text: row.message }],
-    }));
+    const formattedHistory = rows.map((row) => {
+      const messagePart = { text: row.message };
+      const parts = [messagePart];
+
+      if (row.type === "user" && row.files) {
+        console.log("User message with files:", row.files);
+        const files = row.files;
+        files.forEach((file) => {
+          parts.push({
+            fileData: {
+              mimeType: file.mimeType,
+              fileUri: file.fileUri,
+            },
+          });
+        });
+      }
+      return {
+        role: row.type === "bot" ? "model" : row.type,
+        parts: parts,
+      };
+    });
 
     socketToSession = sessionManager.logSocketToSession();
 
@@ -828,8 +847,10 @@ async function loadConversationMessages(pool, conversationId, ws) {
     }
 
     return rows.map((row) => ({
+      id: row.id,
       type: row.type,
       message: row.message,
+      files: row.files ? row.files : null, // Include files
     }));
   } catch (err) {
     console.error("Error loading conversation messages:", err);

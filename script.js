@@ -470,7 +470,8 @@ socket.onmessage = (event) => {
             false,
             msg.id,
             msg.timestamp,
-            responseData.conversationId
+            responseData.conversationId,
+            msg.files
           );
           console.log("Old chat messages:", msg.message);
         });
@@ -767,7 +768,8 @@ function addMessageToChat(
   isPrepended = false,
   messageId = null,
   timestamp = null,
-  conversationId = null
+  conversationId = null,
+  files = null
 ) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message");
@@ -816,6 +818,37 @@ function addMessageToChat(
   MathJax.typesetPromise([messageContentDiv]).catch((err) =>
     console.error("MathJax typesetting failed: " + err.message)
   );
+
+  if (type === "user" && files && files.length > 0) {
+    // also check files.length
+    const filesContainer = document.createElement("div");
+    filesContainer.classList.add("files-container");
+
+    files.forEach((file) => {
+      const filePreview = document.createElement("div");
+      filePreview.classList.add("file-preview");
+
+      if (file.mimeType.startsWith("image/")) {
+        // Image preview
+        const img = document.createElement("img");
+        img.src = `https://autopilot.docs.google.com/v1/files/${file.fileUri
+          .split("/")
+          .pop()}?key=${apiKey}`;
+        img.alt = file.name;
+        img.classList.add("message-image"); // Add a class for styling
+        filePreview.appendChild(img);
+      } else if (file.mimeType === "application/pdf") {
+        // PDF preview
+        filePreview.innerHTML = `<i class="far fa-file-pdf"></i> ${file.name}`;
+      } else {
+        // Generic file preview
+        filePreview.innerHTML = `<i class="far fa-file"></i> ${file.name}`;
+      }
+      filesContainer.appendChild(filePreview);
+    });
+
+    messageDiv.appendChild(filesContainer); // Add files container to message
+  }
 
   const timestampSpan = document.createElement("span");
   timestampSpan.classList.add("message__timestamp");
