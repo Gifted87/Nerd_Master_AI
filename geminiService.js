@@ -27,7 +27,7 @@ let stopStream = false;
 
 setStreamStatus = (status) => {
   stopStream = status;
-}
+};
 
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({
@@ -220,7 +220,7 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         fullResponse += chunkText;
 
         if (stopStream) {
-          console.log("Stream Stopped")
+          console.log("Stream Stopped");
           break;
         }
         // Send chunk immediately
@@ -233,8 +233,6 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         );
       }
       console.log("Stream ended");
-      setStreamStatus(false);
-      console.log("Stop Stream: ",stopStream)
     } catch (streamError) {
       console.error("Stream error:", streamError);
       ws.send(
@@ -244,6 +242,10 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         })
       );
       throw streamError;
+    } finally {
+      setStreamStatus(false); //Moved the reset to ensure it runs even on error
+      setStreamStatus(false);
+      console.log("Stop Stream: ", stopStream);
     }
 
     // Finalize and save
@@ -256,6 +258,7 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         conversationId: sessionManager.getCurrentConversationIdBySocket(ws),
       })
     );
+    setStreamStatus(false);
 
     session.history.push({
       role: "user",

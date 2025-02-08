@@ -332,6 +332,14 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
       } else if (action === "stop_stream") {
         console.log("Stopping Stream");
         geminiService.setStreamStatus(true);
+
+        ws.send(
+          JSON.stringify({
+            type: "stream_end",
+            message: "Stream stopped by user.", // Or any appropriate message
+            conversationId: sessionManager.getCurrentConversationIdBySocket(ws),
+          })
+        );
       } else if (action === "continue_conversation") {
         // ... (continue_conversation action handler - no changes) ...
         const userMessage = data.message?.trim();

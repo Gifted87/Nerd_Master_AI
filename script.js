@@ -230,19 +230,22 @@ function updateStreamDisplay(content, conversationId) {
 }
 
 function finalizeStream(responseData) {
-  const messageDiv = chatMessages.querySelector(
-    `[data-message-id="${currentStreamMessageId}"]`
-  );
+  let messageDiv = null;
+  if (currentStreamMessageId) {
+    const messageDiv = chatMessages.querySelector(
+      `[data-message-id="${currentStreamMessageId}"]`
+    );
 
-  if (messageDiv) {
-    messageDiv.addEventListener("click", function (e) {
-      e.stopPropagation();
-      actionButtons.classList.remove("hidden");
-    });
-    messageDiv.classList.remove("streaming");
-    messageDiv.classList.add("hidden");
+    if (messageDiv) {
+      messageDiv.addEventListener("click", function (e) {
+        e.stopPropagation();
+        actionButtons.classList.remove("hidden");
+      });
+      messageDiv.classList.remove("streaming");
+      messageDiv.classList.add("hidden");
+    }
+    lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
   }
-  lastBotMessage = messageDiv.querySelector(".message__content").innerHTML;
 
   console.log("mathjax: ", messageDiv, responseData.message);
 
