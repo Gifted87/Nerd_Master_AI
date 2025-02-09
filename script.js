@@ -16,6 +16,7 @@ const sidebar = document.getElementById("chat-sidebar");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 let oldChat = false;
 let streaming = false;
+const chatButton = document.getElementById("chat-button");
 
 const signupForm = document.getElementById("signup-form");
 const loginForm = document.getElementById("login-form");
@@ -1420,9 +1421,34 @@ customizationForm.addEventListener("submit", (e) => {
 
 // Cancel customization button
 cancelCustomizationButton.addEventListener("click", () => {
+  const temperature = parseFloat(temperatureInput.value);
+  const aiModel = aiModelSelect.value;
+  const topP = parseFloat(topPInput.value);
+
+  const customizationPayload = {
+    action: "customize_conversation",
+    taskType: null,
+    task: "default",
+    description: "New Chat",
+    temperature: temperature,
+    aiModel: aiModel,
+    topP: topP,
+  };
+
   chatbotCustomizationDialog.classList.add("hidden");
   socket.send(JSON.stringify({ action: "load_previous_conversations" }));
   chatApp.classList.remove("hidden"); // Show chat app with default settings
+  console.log("Sending Just Chat payload:", customizationPayload);
+  try {
+    socket.send(JSON.stringify(customizationPayload));
+  } catch (error) {
+    console.error("Failed to send Just Chat Payload: ", error);
+    displayError(
+      "Failed to connect to server. Please refresh",
+      "network_error"
+    );
+  }
+  showLoading();
 });
 
 newChatButton.addEventListener("click", () => {
