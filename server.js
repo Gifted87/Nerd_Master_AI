@@ -59,6 +59,7 @@ async function connectDB() {
              system_instruction TEXT,
              temperature FLOAT,
              top_p FLOAT,
+             _apiKey VARCHAR(255),
              FOREIGN KEY (userId) REFERENCES users(id)
          )
      `);

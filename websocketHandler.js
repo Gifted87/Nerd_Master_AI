@@ -13,7 +13,7 @@ const handleAuthenticatedConnection = async (ws, pool, userId) => {
   console.log(
     `Authenticated connection established with ${clientAddress} for user id ${userId}`
   );
-  console.log("current model: ", geminiService.getModel())
+
   sessionManager.createSession(
     clientAddress,
     geminiService.getModel(),
@@ -22,6 +22,7 @@ const handleAuthenticatedConnection = async (ws, pool, userId) => {
     userId,
     ws
   );
+  geminiService.setFileManager(ws);
   ws.send(JSON.stringify({ type: "connection_success", userId: userId }));
   setupMessageHandling(ws, pool, userId, clientAddress);
 };
@@ -64,6 +65,7 @@ const handleAction = async (ws, pool, data) => {
         loggedInUserId,
         ws
       );
+      geminiService.setFileManager(ws);
       ws.send(
         JSON.stringify({ type: "signup_success", userId: loggedInUserId })
       );
@@ -97,6 +99,7 @@ const handleAction = async (ws, pool, data) => {
         userId,
         ws
       );
+      geminiService.setFileManager(ws);
       ws.send(JSON.stringify({ type: "login_success", userId: userId }));
       setupMessageHandling(ws, pool, userId, clientAddress);
     } catch (error) {
@@ -220,6 +223,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           userId,
           ws
         );
+        geminiService.setFileManager(ws);
         // setupMessageHandling(ws, pool, userId, clientAddress);
 
         // console.log("socket to session:", sessionManager.logSocketToSession());
@@ -291,7 +295,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
 
         // 5. Generate Initial Response from Gemini
         try {
-          const  { fullResponse, files } = await geminiService.generateResponse(
+          const { fullResponse, files } = await geminiService.generateResponse(
             chatSession,
             initialPrompt,
             ws,
@@ -727,25 +731,28 @@ async function createNewConversation(pool, userId, name, ws) {
   let systemInstruction = geminiService.systemInstruction; // Default
   let temperature = geminiService.generationConfig.temperature; // Default
   let topP = geminiService.generationConfig.topP; //Default
+  let apiKey = null;
 
   if (chatSession) {
     systemInstruction = chatSession.params.systemInstruction.parts[0].text;
     temperature = chatSession.params.generationConfig.temperature;
     topP = chatSession.params.generationConfig.topP;
+    apiKey = sessionManager.getChatHistoryBySocket(ws)._apiKey;
   }
 
   console.log(
     "Saving Gemini Configurations to Database: ",
     systemInstruction,
     temperature,
-    topP
+    topP,
+    apiKey
   );
 
   try {
     const conn = await pool.getConnection();
     const [result] = await conn.execute(
-      "INSERT INTO conversations (userId, name, system_instruction, temperature, top_p) VALUES (?, ?, ?, ?, ?)",
-      [userId, db_name, systemInstruction, temperature, topP]
+      "INSERT INTO conversations (userId, name, system_instruction, temperature, top_p, _apiKey) VALUES (?, ?, ?, ?, ?, ?)",
+      [userId, db_name, systemInstruction, temperature, topP, apiKey]
     );
     conn.release();
     return result.insertId;
@@ -783,7 +790,13 @@ async function saveMessage(pool, message) {
     throw err;
   }
 }
-async function saveConversationMessages(pool, userId, chat, conversationId, ws) {
+async function saveConversationMessages(
+  pool,
+  userId,
+  chat,
+  conversationId,
+  ws
+) {
   // ... (saveConversationMessages function - no changes) ...
   try {
     let currentConversationId = conversationId;
@@ -840,7 +853,7 @@ async function loadConversationMessages(pool, conversationId, ws) {
   try {
     const conn = await pool.getConnection();
     const [rows] = await conn.execute(
-      `SELECT c.system_instruction, c.temperature, c.top_p, m.type, m.message, m.files
+      `SELECT c.system_instruction, c.temperature, c.top_p, c._apiKey, m.type, m.message, m.files
       FROM messages m
       INNER JOIN conversations c ON m.conversationId = c.id
       WHERE m.conversationId = ?
@@ -862,6 +875,9 @@ async function loadConversationMessages(pool, conversationId, ws) {
         ? rows[0].top_p
         : geminiService.generationConfig.topP;
 
+    const apiKey = rows.length > 0 ? rows[0]._apiKey : null;
+    console.log( "Loaded Gemini Config: ", systemInstruction, temperature, topP, apiKey)
+
     const chatSession = sessionManager.getChatHistoryBySocket(ws);
     if (chatSession) {
       chatSession.params.generationConfig = {
@@ -872,6 +888,7 @@ async function loadConversationMessages(pool, conversationId, ws) {
       chatSession.params.systemInstruction = {
         parts: [{ text: systemInstruction }],
       };
+      
     }
 
     console.log("Loaded Gemini Config: ", systemInstruction, temperature, topP);
@@ -902,7 +919,8 @@ async function loadConversationMessages(pool, conversationId, ws) {
 
     if (socketToSession.has(ws)) {
       sessionManager.setChatHistory(ws, formattedHistory);
-      sessionManager.setChatHistory(ws, formattedHistory);
+      sessionManager.setApiKey(ws, apiKey);
+
       // const { clientAddress, chatHistory } = socketToSession.get(ws);
       // if (chatHistory) {
       // chatHistory.history = formattedHistory;

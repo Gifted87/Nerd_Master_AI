@@ -5,6 +5,7 @@ const socketToSession = new Map(); // Maps WebSocket to session details (include
 const conversationIds = new Map(); //Maps socket to conversation id
 const SESSION_TIMEOUT = 3000000 * 60 * 1000; // 1 hour
 
+
 function logSocketToSession() {
   console.log("Current socketToSession Map:");
   socketToSession.forEach((session, ws) => {
@@ -65,6 +66,18 @@ const setChatHistory = (ws, history) => {
     chatHistory._history = history;
   }
 };
+
+
+const setApiKey = (ws, apiKey) => {
+  const { clientAddress, chatHistory } = socketToSession.get(ws);
+  if (chatHistory) {
+    chatHistory._apiKey = apiKey;
+  }
+ console.log("Old _apiKey Restored: ", chatHistory)
+};
+
+
+
 
 const getChatHistoryBySocket = (ws) => {
   const session = socketToSession.get(ws);
@@ -166,4 +179,5 @@ module.exports = {
   getCurrentConversationIdBySocket,
   logSocketToSession,
   setChatHistory,
+  setApiKey,
 };

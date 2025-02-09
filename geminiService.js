@@ -12,9 +12,15 @@ const uuid = require("uuid");
 dotenv.config();
 const assignment = require("./assignment");
 
-// const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Removed single key
+let fileManager;
 
-const fileManager = new GoogleAIFileManager(process.env.GOOGLE_API_KEY);
+function setFileManager(ws) {
+  fileManager = new GoogleAIFileManager(
+    sessionManager.getChatHistoryBySocket(ws)._apiKey
+  );
+};
+
+// const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Removed single key
 
 // Modified check for multiple keys
 if (!process.env.GOOGLE_API_KEYS) {
@@ -47,7 +53,6 @@ setStreamStatus = (status) => {
 // const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp-01-21" }); // Removed single key initialization
 
 function getModel() {
-
   const apiKey = getKey();
   let model;
   if (modelsCache[apiKey]) {
@@ -309,7 +314,7 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
       role: "model",
       parts: [{ text: fullResponse }],
     });
-    
+
     return { fullResponse, files: uploadedFiles };
   } catch (error) {
     console.error("Error generating response:", error);
@@ -322,7 +327,7 @@ async function generateResponse(chat, userMessage, ws, fileDataArray) {
         message: "Response generation was interrupted",
       })
     );
-    return "I couldn't generate a response.";
+    return { fullResponse: "I couldn't generate a response.", files: [] };
   }
 }
 
@@ -336,4 +341,5 @@ module.exports = {
   systemInstruction, // Export default systemInstruction
   getSystemInstructionForTask, // Export the new function
   md,
+  setFileManager,
 };

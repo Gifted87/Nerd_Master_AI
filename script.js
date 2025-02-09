@@ -1442,17 +1442,17 @@ cancelCustomizationButton.addEventListener("click", () => {
   chatbotCustomizationDialog.classList.add("hidden");
   socket.send(JSON.stringify({ action: "load_previous_conversations" }));
   chatApp.classList.remove("hidden"); // Show chat app with default settings
-  console.log("Sending Just Chat payload:", customizationPayload);
-  try {
-    socket.send(JSON.stringify(customizationPayload));
-  } catch (error) {
-    console.error("Failed to send Just Chat Payload: ", error);
-    displayError(
-      "Failed to connect to server. Please refresh",
-      "network_error"
-    );
-  }
-  showLoading();
+  // console.log("Sending Just Chat payload:", customizationPayload);
+  // try {
+  //   socket.send(JSON.stringify(customizationPayload));
+  // } catch (error) {
+  //   console.error("Failed to send Just Chat Payload: ", error);
+  //   displayError(
+  //     "Failed to connect to server. Please refresh",
+  //     "network_error"
+  //   );
+  // }
+  // showLoading();
 });
 
 newChatButton.addEventListener("click", () => {
