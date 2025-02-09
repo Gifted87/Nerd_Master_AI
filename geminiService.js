@@ -73,7 +73,7 @@ const generationConfig = {
   temperature: 0.7,
   topP: 0.7,
   topK: 50,
-  maxOutputTokens: 120000,
+  maxOutputTokens: 8000,
 };
 
 async function uploadToGemini(fileData) {
