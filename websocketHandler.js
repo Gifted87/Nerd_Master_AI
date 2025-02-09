@@ -13,9 +13,10 @@ const handleAuthenticatedConnection = async (ws, pool, userId) => {
   console.log(
     `Authenticated connection established with ${clientAddress} for user id ${userId}`
   );
+  console.log("current model: ", geminiService.getModel())
   sessionManager.createSession(
     clientAddress,
-    geminiService.model,
+    geminiService.getModel(),
     geminiService.generationConfig,
     geminiService.systemInstruction,
     userId,
@@ -57,7 +58,7 @@ const handleAction = async (ws, pool, data) => {
       const loggedInUserId = loginResult.userId;
       sessionManager.createSession(
         clientAddress,
-        geminiService.model,
+        geminiService.getModel(),
         geminiService.generationConfig,
         geminiService.systemInstruction,
         loggedInUserId,
@@ -90,7 +91,7 @@ const handleAction = async (ws, pool, data) => {
       }
       sessionManager.createSession(
         clientAddress,
-        geminiService.model,
+        geminiService.getModel(),
         geminiService.generationConfig,
         geminiService.systemInstruction,
         userId,
@@ -213,7 +214,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
 
         sessionManager.createSession(
           clientAddress,
-          geminiService.model,
+          geminiService.getModel(),
           geminiService.generationConfig,
           geminiService.systemInstruction,
           userId,
