@@ -16,6 +16,7 @@ const sidebar = document.getElementById("chat-sidebar");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 let oldChat = false;
 let streaming = false;
+let delayLoading = false;
 const chatButton = document.getElementById("chat-button");
 
 const signupForm = document.getElementById("signup-form");
@@ -407,6 +408,7 @@ socket.onmessage = (event) => {
       chatbotCustomizationDialog.classList.add("hidden");
       chatApp.classList.remove("hidden");
       hideLoading(); // ADDED: Hide loading overlay here!
+      delayLoading = false;
       socket.send(JSON.stringify({ action: "load_previous_conversations" }));
       if (messageContent) {
         // addMessageToChat(messageContent, "bot"); // Display initial bot message if provided
@@ -449,10 +451,12 @@ socket.onmessage = (event) => {
       streaming = false;
     } else if (messageType === "previous_conversations") {
       displayConversationList(responseData.conversations);
-      hideLoading();
-      toggleButtonLoading(false);
-      streaming = false;
-      console.log(oldChat);
+      if (delayLoading === false) {
+        hideLoading();
+        toggleButtonLoading(false);
+        streaming = false;
+        console.log(oldChat);
+      }
     } else if (messageType === "conversation_messages") {
       hideLoading();
       chatMessages.innerHTML = "";
@@ -1424,7 +1428,7 @@ cancelCustomizationButton.addEventListener("click", () => {
   const temperature = parseFloat(temperatureInput.value);
   const aiModel = aiModelSelect.value;
   const topP = parseFloat(topPInput.value);
-
+  delayLoading = true;
   const customizationPayload = {
     action: "customize_conversation",
     taskType: null,
