@@ -201,7 +201,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             pool,
             userId,
             currentChat,
-            currentConversationId
+            currentConversationId,
+            ws
           );
         }
         sessionManager.deleteSessionByUserId(userId);
@@ -238,7 +239,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             pool,
             userId,
             currentChat,
-            currentConversationId
+            currentConversationId,
+            ws
           );
         }
         ws.send(
@@ -281,18 +283,20 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         const conversationId = await createNewConversation(
           pool,
           userId,
-          `${task} - ${description}`
+          `${task} - ${description}`,
+          ws
         );
         sessionManager.setCurrentConversationIdBySocket(ws, conversationId);
 
         // 5. Generate Initial Response from Gemini
         try {
-          const botResponse = await geminiService.generateResponse(
+          const  { fullResponse, files } = await geminiService.generateResponse(
             chatSession,
             initialPrompt,
-            ws
+            ws,
+            null
           );
-          const htmlResponse = geminiService.md.render(botResponse);
+          const htmlResponse = geminiService.md.render(fullResponse);
           const timestamp = Date.now();
 
           // 6. Save Initial User and Bot Messages to Database
@@ -393,7 +397,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           currentConversationId = await createNewConversation(
             pool,
             userId,
-            userMessage
+            userMessage,
+            ws
           );
           sessionManager.setCurrentConversationIdBySocket(
             ws,
@@ -517,7 +522,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           currentConversationId = await createNewConversation(
             pool,
             userId,
-            userMessage
+            userMessage,
+            ws
           );
           sessionManager.setCurrentConversationIdBySocket(
             ws,
@@ -692,7 +698,8 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
         pool,
         userId,
         currentChat,
-        currentConversationId
+        currentConversationId,
+        ws
       );
     }
 
@@ -705,7 +712,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
     sessionManager.deleteSessionBySocket(ws);
   });
 };
-async function createNewConversation(pool, userId, name) {
+async function createNewConversation(pool, userId, name, ws) {
   // ... (createNewConversation function - no changes) ...
   let input = name.toString().substring(0, 50);
   if (input.includes("-")) {
@@ -714,11 +721,30 @@ async function createNewConversation(pool, userId, name) {
   }
 
   const db_name = input;
+
+  const chatSession = sessionManager.getChatHistoryBySocket(ws);
+  let systemInstruction = geminiService.systemInstruction; // Default
+  let temperature = geminiService.generationConfig.temperature; // Default
+  let topP = geminiService.generationConfig.topP; //Default
+
+  if (chatSession) {
+    systemInstruction = chatSession.params.systemInstruction.parts[0].text;
+    temperature = chatSession.params.generationConfig.temperature;
+    topP = chatSession.params.generationConfig.topP;
+  }
+
+  console.log(
+    "Saving Gemini Configurations to Database: ",
+    systemInstruction,
+    temperature,
+    topP
+  );
+
   try {
     const conn = await pool.getConnection();
     const [result] = await conn.execute(
-      "INSERT INTO conversations (userId, name) VALUES (?, ?)",
-      [userId, db_name]
+      "INSERT INTO conversations (userId, name, system_instruction, temperature, top_p) VALUES (?, ?, ?, ?, ?)",
+      [userId, db_name, systemInstruction, temperature, topP]
     );
     conn.release();
     return result.insertId;
@@ -756,13 +782,13 @@ async function saveMessage(pool, message) {
     throw err;
   }
 }
-async function saveConversationMessages(pool, userId, chat, conversationId) {
+async function saveConversationMessages(pool, userId, chat, conversationId, ws) {
   // ... (saveConversationMessages function - no changes) ...
   try {
     let currentConversationId = conversationId;
     if (!currentConversationId) {
       console.log(`creating new conversation before saving messages`);
-      currentConversationId = await createNewConversation(pool, userId);
+      currentConversationId = await createNewConversation(pool, userId, ws);
     }
     const messages = chat.history;
     if (!messages || messages.length === 0) {
@@ -813,10 +839,41 @@ async function loadConversationMessages(pool, conversationId, ws) {
   try {
     const conn = await pool.getConnection();
     const [rows] = await conn.execute(
-      "SELECT type, message, files FROM messages WHERE conversationId = ? ORDER BY timestamp ASC",
+      `SELECT c.system_instruction, c.temperature, c.top_p, m.type, m.message, m.files
+      FROM messages m
+      INNER JOIN conversations c ON m.conversationId = c.id
+      WHERE m.conversationId = ?
+      ORDER BY m.timestamp ASC`,
       [conversationId]
     );
     conn.release();
+
+    const systemInstruction =
+      rows.length > 0 && rows[0].system_instruction !== null
+        ? rows[0].system_instruction
+        : geminiService.systemInstruction;
+    const temperature =
+      rows.length > 0 && rows[0].temperature !== null
+        ? rows[0].temperature
+        : geminiService.generationConfig.temperature;
+    const topP =
+      rows.length > 0 && rows[0].top_p !== null
+        ? rows[0].top_p
+        : geminiService.generationConfig.topP;
+
+    const chatSession = sessionManager.getChatHistoryBySocket(ws);
+    if (chatSession) {
+      chatSession.params.generationConfig = {
+        ...chatSession.params.generationConfig,
+        temperature: temperature,
+        topP: topP,
+      };
+      chatSession.params.systemInstruction = {
+        parts: [{ text: systemInstruction }],
+      };
+    }
+
+    console.log("Loaded Gemini Config: ", systemInstruction, temperature, topP);
 
     const formattedHistory = rows.map((row) => {
       const messagePart = { text: row.message };

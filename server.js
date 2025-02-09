@@ -56,6 +56,9 @@ async function connectDB() {
              userId INT NOT NULL,
              name VARCHAR(255),
              startTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+             system_instruction TEXT,
+             temperature FLOAT,
+             top_p FLOAT,
              FOREIGN KEY (userId) REFERENCES users(id)
          )
      `);
