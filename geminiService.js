@@ -18,6 +18,7 @@ function setFileManager(ws) {
   fileManager = new GoogleAIFileManager(
     sessionManager.getChatHistoryBySocket(ws)._apiKey
   );
+  console.log("File Manager Set", sessionManager.getChatHistoryBySocket(ws)._apiKey);
 };
 
 // const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Removed single key

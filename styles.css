@@ -1749,3 +1749,8 @@ mjx-sub, mjx-sup {
   max-height: 200px; /* Limit image height */
   border-radius: var(--border-radius);
 }
+
+#chatbot-customization-dialog select.form-group__input option {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+}
