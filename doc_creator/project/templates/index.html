@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered Document Generator">
+    <title>DocGen Pro</title>
+    <!-- Link to CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <!-- Consider adding a favicon -->
+    <!-- <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}"> -->
+</head>
+<body>
+    <main class="container">
+        <header>
+            <!-- Changed h1 to be inside header for better structure -->
+            <h1>Document Generator</h1>
+            <p>Enter a description, and AI will generate a document for you.</p>
+        </header>
+
+        <!-- Form for document generation request -->
+        <form id="generatorForm" class="form-card" novalidate> <!-- novalidate prevents browser validation, handled by JS -->
+            <!-- CSRF Token - Essential for security, used by app.js -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="promptInput">Document Request:</label>
+                <textarea
+                    id="promptInput"
+                    class="form-control"
+                    placeholder="Example: 'Create a 3-slide presentation about renewable energy sources including solar, wind, and hydro.'"
+                    required
+                    rows="4" aria-required="true" aria-describedby="promptHelp"
+                ></textarea>
+                 <small id="promptHelp" class="form-text text-muted">Describe the document you want (e.g., type, topic, length).</small>
+            </div>
+
+            <!-- Submit Button with integrated spinner -->
+            <button type="submit" class="btn-primary">
+                <span class="btn-content">Generate Document</span>
+                <!-- Spinner is now inside the button -->
+                <div class="spinner hidden" role="status" aria-label="Loading"></div>
+            </button>
+        </form>
+
+        <!-- Area to display results (status message and download link) -->
+        <div id="resultContainer" class="result-area hidden" aria-live="polite"> <!-- aria-live makes screen readers announce changes -->
+            <div class="alert"> <!-- Consider adding alert-success/alert-danger classes dynamically -->
+                <p id="statusMessage"></p>
+                <!-- Download link, initially hidden -->
+                <a id="downloadLink" class="btn-download hidden" href="#"></a> <!-- href="#" is a placeholder -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Link to JavaScript, loaded at the end of the body -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -224,7 +224,7 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           ws
         );
         geminiService.setFileManager(ws);
-        console.log("filemanager apikey set:", sessionManager.getChatHistoryBySocket()._apiKey)
+        console.log("filemanager apikey set:", sessionManager.getChatHistoryBySocket(ws)._apiKey)
         // setupMessageHandling(ws, pool, userId, clientAddress);
 
         // console.log("socket to session:", sessionManager.logSocketToSession());

@@ -321,7 +321,7 @@ const cancelCustomizationButton = document.getElementById(
 );
 
 let authToken = localStorage.getItem("authToken");
-const socket = new WebSocket("ws://192.168.43.45:8765");
+const socket = new WebSocket("ws://192.168.106.45:8765");
 let selectedConversationId = null;
 
 closeVerifyEmailButton.addEventListener("click", () => {

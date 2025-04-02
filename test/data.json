@@ -1,0 +1,22 @@
+{
+    "starterApps":[
+      {
+        "icon":"photo_camera",
+        "title": "Spatial Understanding",
+        "description": "Upload a photo and combine 2D or 3D spatial analysis with reasoning. Ask Gemini to give you the locations of objects, text, and more.",
+         "modalDescription": "This is the modal description for the spatial understanding card. It will go into further details about the particular functionality of this app"
+      },
+       {
+        "icon":"videocam",
+        "title":"Video Analyzer",
+        "description": "An interactive video player that lets you summarize, describe scenes, extract text, search for objects, and more.",
+          "modalDescription": "This is the modal description for the video analyzer card. It will go into further details about the particular functionality of this app"
+      },
+      {
+       "icon":"map",
+        "title": "Map",
+        "description": "Explore world and the API. As find you place.",
+          "modalDescription": "This is the modal description for the map card. It will go into further details about the particular functionality of this app"
+      }
+    ]
+  }
