@@ -36,6 +36,14 @@ const toggleLoginFromForgot = document.getElementById(
   "toggle-login-from-forgot"
 );
 
+// Add selectors for the new result display elements
+const generationResultDisplay = document.getElementById(
+  "generation-result-display"
+);
+const resultMessage = document.getElementById("result-message");
+const resultDownloadButton = document.getElementById("result-download-button");
+const resultGoBackButton = document.getElementById("result-goback-button");
+
 const verifyEmailOverlay = document.getElementById("verify-email-overlay");
 const loadConversationsButton = document.getElementById(
   "load-conversations-button"
@@ -51,10 +59,122 @@ const actionButtons = document.getElementById("action-buttons");
 const copyContent = document.getElementById("copy-content");
 let lastBotMessage = null;
 
+const exportFab = document.getElementById("export-fab");
+const exportDialog = document.getElementById("export-dialog");
+
+// Add these with other element selectors
+const generateDocumentFromCustomizationButton = document.getElementById(
+  "generate-document-from-customization-button"
+);
+const documentGenerationDialog = document.getElementById(
+  "document-generation-dialog"
+);
+const documentGenerationForm = document.getElementById(
+  "document-generation-form"
+);
+const docGenTypeInput = document.getElementById("doc-gen-type");
+const docGenDescriptionInput = document.getElementById("doc-gen-description");
+const docGenPagesInput = document.getElementById("doc-gen-pages");
+const proceedGenerateDocumentButton = document.getElementById(
+  "proceed-generate-document-button"
+);
+const cancelGenerateDocumentButton = document.getElementById(
+  "cancel-generate-document-button"
+);
+const customizationDescriptionInput =
+  document.getElementById("description-input"); // Get the original description input
+
 // New dialog elements
 const chatbotCustomizationDialog = document.getElementById(
   "chatbot-customization-dialog"
 );
+
+let exportState = {
+  active: false,
+  processing: false,
+  currentRequestId: null,
+};
+
+document.getElementById("export-fab").addEventListener("click", () => {
+  exportDialog.classList.remove("hidden");
+  console.log("export fab clicked");
+});
+
+// Handle content selection change
+document.querySelectorAll('input[name="content"]').forEach((radio) => {
+  radio.addEventListener("change", (e) => {
+    document
+      .getElementById("chapter-input")
+      .classList.toggle("hidden", e.target.value !== "full");
+  });
+});
+
+document
+  .getElementById("cancel-export-button")
+  .addEventListener("click", () => {
+    exportDialog.classList.add("hidden"); // Simply hide the dialog
+    // Optionally reset the form fields if needed
+    document.getElementById("export-form").reset();
+    document.getElementById("chapter-input").classList.add("hidden"); // Re-hide chapter input if form reset doesn't do it
+  });
+
+// --- START: Locate this existing listener in script.js ---
+document.getElementById("export-form").addEventListener("submit", async (e) => {
+  e.preventDefault(); // Keep this
+  if (exportState.processing) return; // Keep this guard
+
+  // --- REFINED CODE START ---
+
+  // 1. Get references to the chapter input container and the textarea within it
+  const chapterInputDiv = document.getElementById("chapter-input");
+  const chapterTextarea = chapterInputDiv.querySelector("textarea"); // Find textarea inside the div
+
+  // 2. Determine the chapter value conditionally
+  let chapterValue = null;
+  // Check if the 'Entire Conversation' radio is checked AND the textarea exists
+  if (
+    document.querySelector('input[name="content"][value="full"]').checked &&
+    chapterTextarea
+  ) {
+    chapterValue = chapterTextarea.value.trim(); // Get trimmed value
+    // Optionally, set to null if empty after trimming
+    if (chapterValue === "") {
+      chapterValue = null;
+    }
+  }
+
+  // 3. Construct the payload
+  const payload = {
+    action: "generate_document",
+    contentType: document.querySelector('input[name="content"]:checked').value,
+    docType: document.getElementById("doc-type").value,
+    // Use the determined chapter value
+    chapters: chapterValue,
+    // Include the current conversation ID if one is selected
+    // conversationId: selectedConversationId, // Assuming 'selectedConversationId' holds the current chat ID
+  };
+
+  // Check if a conversation is selected (needed for export)
+  // if (!selectedConversationId) {
+  //   displayError("Please select a conversation to export.", "export_error");
+  //   return; // Stop if no conversation is active
+  // }
+
+  console.log("Sending export payload:", payload); // Good for debugging
+
+  exportState.processing = true; // Set processing state
+  socket.send(JSON.stringify(payload)); // Send the payload
+  showLoading("Generating document"); // Show loading indicator
+
+  // 4. Hide the export dialog immediately after submission
+  exportDialog.classList.add("hidden");
+
+  // IMPORTANT: Remember to add 'hideLoading()' and reset 'exportState.processing = false;'
+  // in your socket.onmessage handler when you receive the success or error response
+  // for the 'generate_document' action from the server.
+
+  // --- REFINED CODE END ---
+});
 
 let lastBotRawMarkdown = "";
 
@@ -321,7 +441,7 @@ const cancelCustomizationButton = document.getElementById(
 );
 
 let authToken = localStorage.getItem("authToken");
-const socket = new WebSocket("ws://192.168.106.45:8765");
+const socket = new WebSocket("ws://192.168.43.45:8765");
 let selectedConversationId = null;
 
 closeVerifyEmailButton.addEventListener("click", () => {
@@ -403,6 +523,59 @@ socket.onmessage = (event) => {
       chatApp.classList.add("hidden"); // Ensure chat app is hidden initially
       hideLoading();
       socket.send(JSON.stringify({ action: "load_previous_conversations" }));
+    } else if (messageType === "generate_new_document_success") {
+      hideLoading(); // Hide the main loading overlay
+
+      resultMessage.textContent = "Document Generated Successfully!";
+      resultDownloadButton.href = responseData.downloadUrl;
+      resultDownloadButton.download =
+        responseData.filename || `generated_document`;
+      resultDownloadButton.classList.remove("hidden"); // Show download button
+      resultGoBackButton.classList.remove("hidden"); // Ensure go back is visible
+
+      generationResultDisplay.classList.remove("hidden"); // Show the result display
+
+      console.log(
+        "New document generated successfully:",
+        responseData.downloadUrl
+      );
+    } else if (messageType === "generate_new_document_error") {
+      hideLoading(); // Hide the main loading overlay
+
+      resultMessage.textContent =
+        responseData.message || "Failed to generate the new document.";
+      resultDownloadButton.classList.add("hidden"); // Ensure download button is hidden
+      resultGoBackButton.classList.remove("hidden"); // Ensure go back is visible
+
+      generationResultDisplay.classList.remove("hidden"); // Show the result display
+
+      console.error("Error generating new document:", responseData.message);
+    } else if (messageType === "document_generation_success") {
+      hideLoading();
+      exportState.processing = false;
+      // Add a message to the chat indicating success with a download link
+      addMessageToChat(
+        `<div class="message--document">
+             <a href="${
+               responseData.downloadUrl
+             }" target="_blank" class="document-link" download="${
+          responseData.filename || "export.pdf"
+        }">
+               <i class="fas fa-file-download"></i>
+               <span>Document ready: ${
+                 responseData.filename || "Click to download"
+               }</span>
+             </a>
+           </div>`,
+        "bot" // Or a specific 'system' type if you prefer
+      );
+    } else if (messageType === "document_generation_error") {
+      hideLoading();
+      exportState.processing = false;
+      displayError(
+        responseData.message || "Failed to generate document.",
+        "export_error"
+      );
     } else if (messageType === "customize_conversation_success") {
       // After customization is sent and processed, hide dialog and show chat app
       chatbotCustomizationDialog.classList.add("hidden");
@@ -618,7 +791,7 @@ signupForm.addEventListener("submit", (e) => {
     );
     return;
   }
-  showLoading();
+  showLoading("Signing up");
   console.log(`Attempting signup payload`, {
     username: username,
     email: email,
@@ -647,7 +820,7 @@ loginForm.addEventListener("submit", (e) => {
     displayAuthError("Password field is required", "login_error");
     return;
   }
-  showLoading();
+  showLoading("Logging in");
   console.log(`Attempting login payload`, {
     email: email,
     password: password,
@@ -671,7 +844,7 @@ forgotPasswordForm.addEventListener("submit", (e) => {
     );
     return;
   }
-  showLoading();
+  showLoading("Sending reset email");
   console.log("Attempting forgot password request:", {
     email: forgotEmail,
   });
@@ -697,7 +870,7 @@ resetPasswordForm.addEventListener("submit", (e) => {
     return;
   }
   const token = getQueryParam("token");
-  showLoading();
+  showLoading("Resetting password");
   const resetPasswordPayload = {
     action: "reset_password",
     newPassword: newPassword,
@@ -940,6 +1113,12 @@ function editMessage(messageDiv, messageContent, currentMessage) {
   messageDiv.appendChild(saveButton);
 }
 
+// Listener for the "Go Back" button in the result display
+resultGoBackButton.addEventListener("click", () => {
+  generationResultDisplay.classList.add("hidden"); // Hide the result display first
+  location.reload(); // Reload the page
+});
+
 function createTimestampSpan(timestamp) {
   const timestampSpan = document.createElement("span");
   timestampSpan.classList.add("message__timestamp");
@@ -989,9 +1168,17 @@ function deleteMessageFromUI(messageId) {
   }
 }
 
-function showLoading() {
-  loadingOverlay.classList.remove("hidden");
+function showLoading(text = "Working") {
+  const loadingTextElement = document.getElementById("loading-text");
+  if (loadingTextElement) {
+    loadingTextElement.textContent = text; // Set the text content
+  } else {
+    // Fallback or warning if the text element isn't found
+    console.warn("Loading text element (#loading-text) not found.");
+  }
+  loadingOverlay.classList.remove("hidden"); // Show the overlay
 }
+
 function hideLoading() {
   loadingOverlay.classList.add("hidden");
 }
@@ -1287,7 +1474,7 @@ chatForm.addEventListener("submit", async (e) => {
 
   const fileDataArray = [];
   if (files.length > 0) {
-    showLoading("Uploading files...");
+    showLoading("Uploading files");
     for (const file of files) {
       const fileData = await new Promise((resolve) => {
         const reader = new FileReader();
@@ -1323,7 +1510,7 @@ chatForm.addEventListener("submit", async (e) => {
   }
 
   if (currentFile) {
-    showLoading("Uploading file...");
+    showLoading("Uploading file");
   }
 
   if (message && oldChat === false) {
@@ -1420,7 +1607,7 @@ customizationForm.addEventListener("submit", (e) => {
 
   console.log("Sending customization payload:", customizationPayload);
   socket.send(JSON.stringify(customizationPayload));
-  showLoading(); // Optionally show loading overlay while processing customization
+  showLoading("Starting session"); // Optionally show loading overlay while processing customization
 });
 
 // Cancel customization button
@@ -1505,7 +1692,7 @@ function displayConversationList(conversations) {
   });
 }
 function loadConversation(conversationId) {
-  showLoading();
+  showLoading("Loading conversation");
   socket.send(
     JSON.stringify({
       action: "load_conversation",
@@ -1513,6 +1700,55 @@ function loadConversation(conversationId) {
     })
   );
 }
+
+// Listener for the new button in the customization dialog
+generateDocumentFromCustomizationButton.addEventListener("click", () => {
+  // Pre-fill description from customization dialog
+  docGenDescriptionInput.value = customizationDescriptionInput.value;
+
+  chatbotCustomizationDialog.classList.add("hidden"); // Hide customization
+  documentGenerationDialog.classList.remove("hidden"); // Show new dialog
+});
+
+// Listener for the "Cancel" button in the new document dialog
+cancelGenerateDocumentButton.addEventListener("click", () => {
+  documentGenerationDialog.classList.add("hidden"); // Hide this dialog
+  chatbotCustomizationDialog.classList.remove("hidden"); // Show customization again
+});
+
+// Listener for the "Proceed" button in the new document dialog (Form Submission)
+documentGenerationForm.addEventListener("submit", (e) => {
+  e.preventDefault(); // Prevent default form submission
+
+  const docType = docGenTypeInput.value;
+  const description = docGenDescriptionInput.value.trim();
+  const pages = parseInt(docGenPagesInput.value, 10);
+
+  // Basic Frontend Validation
+  if (!description) {
+    // You might want a more robust error display within the dialog
+    alert("Please enter a description.");
+    return;
+  }
+  if (isNaN(pages) || pages < 1 || pages > 30) {
+    alert("Please enter a page number between 1 and 30.");
+    return;
+  }
+
+  // Construct payload for the NEW action
+  const payload = {
+    action: "generate_new_document", // <-- NEW ACTION
+    docType: docType,
+    description: description,
+    pages: pages,
+  };
+
+  console.log("Sending generate_new_document payload:", payload);
+  socket.send(JSON.stringify(payload));
+
+  showLoading("Generating new document..."); // Show loading overlay
+  documentGenerationDialog.classList.add("hidden"); // Hide the dialog
+});
 
 logoutButton.addEventListener("click", () => {
   localStorage.removeItem("authToken");

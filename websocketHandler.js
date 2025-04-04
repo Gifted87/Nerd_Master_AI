@@ -1,6 +1,9 @@
 const sessionManager = require("./sessionManager");
 const geminiService = require("./geminiService");
 const authService = require("./authService");
+const { use } = require("marked");
+
+require("dotenv").config();
 
 function sendError(ws, message, errorType = "general") {
   ws.send(
@@ -179,6 +182,213 @@ const handleAction = async (ws, pool, data) => {
   }
 };
 
+function buildDocumentPrompt({ contentType, docType, chapters, history }) {
+  // Input validation
+  if (!history || !Array.isArray(history)) {
+    console.error("Invalid history provided to buildDocumentPrompt:", history);
+    throw new Error(
+      "Invalid conversation history provided for document generation."
+    );
+  }
+
+  // Filter out potentially malformed history items
+  const validHistory = history.filter(
+    (m) =>
+      m &&
+      m.role &&
+      m.parts &&
+      Array.isArray(m.parts) &&
+      m.parts.length > 0 &&
+      typeof m.parts[0].text === "string"
+  );
+
+  if (validHistory.length === 0) {
+    console.log("No valid messages found in history for document generation.");
+    // Provide a fallback prompt if history is empty
+    return `Generate ${docType.toUpperCase()} document with following requirements:
+Format: ${docType}
+${chapters ? `Chapter Structure: ${chapters}` : ""}
+Style: Formal academic paper format with proper headings.
+Content: No relevant conversation content was provided or available. Please generate a template or generic document.`;
+  }
+
+  const contentSource = validHistory
+    .map((m) => {
+      const rolePrefix = m.role === "model" ? "AI Assistant" : "User";
+      const textContent = m.parts[0]?.text || ""; // Ensure text exists
+      return `${rolePrefix}: ${textContent}`;
+    })
+    .join("\n\n---\n\n"); // Use a clear separator
+
+  console.log("contentSource: ", contentSource); // Debugging line
+
+  // Construct the final prompt for the API
+  return `Generate ${docType.toUpperCase()} document with following requirements:
+Format: ${docType}
+${chapters ? `Chapter Structure: ${chapters}` : ""}
+Style: Formal styling with proper headings and subheading, bullets and tables where neccessary.
+Content: ${contentSource} 
+`;
+}
+
+// Calls the external Document Generation API
+async function fetchDocumentFromAPI(prompt) {
+  const apiKey = process.env.DOC_API_SECRET_KEY;
+  if (!apiKey) {
+    console.error(
+      "Document Generation API Key (DOC_API_SECRET_KEY) is missing from environment variables."
+    );
+    throw new Error(
+      "Service configuration error: Cannot authenticate with document generation service."
+    );
+  }
+
+  // Use environment variable or config for the API URL, default to doc.txt URL
+  const apiUrl =
+    process.env.DOC_API_URL || "http://192.168.43.45:5000/generate-file"; // From doc.txt
+
+  console.log(`Sending request to Document API: ${apiUrl}`);
+  // console.log(`Prompt for Document API: ${prompt}`); // Avoid logging potentially large/sensitive prompts
+
+  try {
+    // Ensure you have 'node-fetch' installed (`npm install node-fetch`) if using Node < 18
+    // Or use the built-in global fetch in Node 18+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": apiKey, // Use the fetched token
+      },
+      body: JSON.stringify({ prompt }), // Send only the prompt as per doc.txt
+    });
+
+    console.log(`Document API Response Status: ${response.status}`);
+
+    if (!response.ok) {
+      let errorBody = "No error details available.";
+      try {
+        errorBody = await response.text();
+      } catch (readError) {
+        /* Ignore */
+      }
+      console.error("Document API Error Body:", errorBody);
+      // Throw a more specific error based on status
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(
+          `Authentication failed with Document API (status ${response.status}). Check API Key.`
+        );
+      }
+      throw new Error(
+        `Document API request failed with status ${
+          response.status
+        }. ${errorBody.substring(0, 100)}`
+      );
+    }
+
+    const responseData = await response.json();
+    console.log("Document API Response Data:", responseData);
+
+    // Validate response data structure
+    if (!responseData.download_url || !responseData.filename) {
+      console.error(
+        "Invalid response structure from Document API:",
+        responseData
+      );
+      throw new Error(
+        "Received an invalid response from the document generation service."
+      );
+    }
+    return responseData; // Contains { download_url, filename }
+  } catch (error) {
+    console.error("Error calling Document API:", error);
+    // Re-throw a generic error to avoid exposing too much detail
+    throw new Error(
+      `Failed to communicate with the document generation service. ${error.message}`
+    );
+  }
+}
+
+// Handles the 'generate_document' action received via WebSocket
+async function handleDocumentGeneration(ws, userId, data) {
+  const clientAddress = ws._socket.remoteAddress + ":" + ws._socket.remotePort;
+  console.log(
+    `Handling document generation request for user ${userId}, data:`,
+    data
+  );
+  try {
+    const { contentType, docType, chapters } = data; // Payload from client
+
+    // Validate incoming data
+    if (!contentType || !docType) {
+      throw new Error("Missing required parameters (contentType, docType).");
+    }
+
+    // Retrieve the chat history associated with this WebSocket connection
+    const chatSession = sessionManager.getChatHistoryBySocket(ws);
+
+    // Check if chat history exists for the session
+    if (!chatSession || !chatSession.history) {
+      console.error(
+        `Chat history not found for user ${userId}, client ${clientAddress}. Cannot generate document.`
+      );
+      sendError(
+        ws,
+        "Could not find chat history for this session. Load conversation first.",
+        "session_error"
+      );
+      return; // Stop
+    }
+
+    console.log(
+      `Retrieved chat history length: ${chatSession.history.length} for user ${userId}.`
+    );
+
+    // Build the prompt
+    const prompt = buildDocumentPrompt({
+      contentType,
+      docType,
+      chapters,
+      history: chatSession.history, // Pass the actual history array
+    });
+
+    // Call the external API
+    const docResponse = await fetchDocumentFromAPI(prompt);
+
+    // --- Send Success Response back to Client ---
+    if (ws.readyState === ws.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "document_generation_success", // Match client handler in script.js
+          success: true,
+          downloadUrl: "http://192.168.43.45:5000" + docResponse.download_url, // Field name expected by client
+          filename: docResponse.filename,
+        })
+      );
+      console.log(
+        `Document generation successful for user ${userId}. URL: http://192.168.43.45:5000${docResponse.download_url}`
+      );
+    }
+  } catch (error) {
+    console.error(
+      `Error during document generation process for user ${userId}:`,
+      error
+    );
+    // --- Send Error Response back to Client ---
+    if (ws.readyState === ws.OPEN) {
+      // Match client error handler type
+      ws.send(
+        JSON.stringify({
+          type: "document_generation_error", // Match client handler
+          success: false,
+          message:
+            error.message ||
+            "Document generation failed due to an internal error.",
+        })
+      );
+    }
+  }
+}
+
 const setupMessageHandling = (ws, pool, userId, clientAddress) => {
   ws.on("message", async (messageString) => {
     // console.log("Received message on server during WS", sessionManager.logSocketToSession(ws));
@@ -210,6 +420,77 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           );
         }
         sessionManager.deleteSessionByUserId(userId);
+      } else if (action === "generate_document") {
+        handleDocumentGeneration(ws, userId, data);
+      } else if (action === "generate_new_document") {
+        console.log(
+          `Generate new document request received for user ${userId}`,
+        );
+        try {
+          const { docType, description, pages } = data;
+
+          // --- Backend Validation ---
+          if (!docType || !description || !pages) {
+            throw new Error(
+              "Missing required parameters (docType, description, pages)."
+            );
+          }
+          const pageCount = parseInt(pages, 10);
+          if (isNaN(pageCount) || pageCount < 1 || pageCount > 30) {
+            throw new Error("Invalid page count. Must be between 1 and 30.");
+          }
+          // --- End Validation ---
+
+          const calculated_paragraphs = pageCount * 3; // 15 paragraphs per page
+          // --- Construct a NEW Prompt ---
+          // This prompt is specifically for generating NEW content based on description and page count
+          const newDocumentPrompt = `create a ${docType.toUpperCase()} document with the following details:
+          Style: Formal styling with proper headings and subheading, bullets and tables where neccessary.
+          content: ${description}
+          paragraphs: ${calculated_paragraphs}
+          paragraph length: 150 words
+          pages: ${pageCount}
+          CRITICAL - DO NOT USE FILLERS, DO NOT REPEAT SENTENCES OR PARAGRAPHS, EXPAND THE CONTEXT OF THE SUBJECT IF NECCESSARY.`;
+          // --- End Prompt Construction ---
+          console.log(
+            `Calling document API for new document generation. Type: ${docType}, Pages: ${pageCount}`
+          );
+          // Call the *existing* API function with the *new* prompt
+          const docResponse = await fetchDocumentFromAPI(newDocumentPrompt);
+
+          // Send success response back to client
+          if (ws.readyState === ws.OPEN) {
+            ws.send(
+              JSON.stringify({
+                type: "generate_new_document_success", // <-- New success type
+                success: true,
+                downloadUrl:
+                  "http://192.168.43.45:5000" + docResponse.download_url, // Adjust host if needed
+                filename:
+                  docResponse.filename || `generated_${docType}_document`,
+              })
+            );
+            console.log(
+              `New document generated successfully for user ${userId}. URL: http://192.168.43.45:5000${docResponse.download_url}`
+            );
+          }
+        } catch (error) {
+          console.error(
+            `Error during new document generation process for user ${userId}:`,
+            error
+          );
+          if (ws.readyState === ws.OPEN) {
+            ws.send(
+              JSON.stringify({
+                type: "generate_new_document_error", // <-- New error type
+                success: false,
+                message:
+                  error.message ||
+                  "New document generation failed due to an internal error.",
+              })
+            );
+          }
+        }
       } else if (action === "new_chat") {
         // ... (new_chat action handler - no changes) ...
         console.log(`new chat request received from ${clientAddress}`);
@@ -224,7 +505,10 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
           ws
         );
         geminiService.setFileManager(ws);
-        console.log("filemanager apikey set:", sessionManager.getChatHistoryBySocket(ws)._apiKey)
+        console.log(
+          "filemanager apikey set:",
+          sessionManager.getChatHistoryBySocket(ws)._apiKey
+        );
         // setupMessageHandling(ws, pool, userId, clientAddress);
 
         // console.log("socket to session:", sessionManager.logSocketToSession());
@@ -679,6 +963,24 @@ const setupMessageHandling = (ws, pool, userId, clientAddress) => {
             "internal_error"
           );
         }
+      } else if (action === "generate_document") {
+        // <<< ADD THIS BLOCK HERE
+        console.log(
+          `Generate document request received for user ${userId}`
+        );
+        // Delegate to the specific handler function (we'll create this next)
+        // Pass ws, the userId from setupMessageHandling's scope, and the received data
+        await handleDocumentGeneration(ws, userId, data);
+      } else {
+        console.warn(
+          `Unhandled action '${action}' received from authenticated user ${userId} on ${clientAddress}`
+        );
+        // Optionally inform the client about the unhandled action
+        sendError(
+          ws,
+          `Action '${action}' is not recognized by the server.`,
+          "unhandled_action"
+        );
       }
     } catch (error) {
       console.error("Error processing message:", error);
@@ -877,7 +1179,13 @@ async function loadConversationMessages(pool, conversationId, ws) {
         : geminiService.generationConfig.topP;
 
     const apiKey = rows.length > 0 ? rows[0]._apiKey : null;
-    console.log( "Loaded Gemini Config: ", systemInstruction, temperature, topP, apiKey)
+    console.log(
+      "Loaded Gemini Config: ",
+      systemInstruction,
+      temperature,
+      topP,
+      apiKey
+    );
 
     const chatSession = sessionManager.getChatHistoryBySocket(ws);
     if (chatSession) {
@@ -889,7 +1197,6 @@ async function loadConversationMessages(pool, conversationId, ws) {
       chatSession.params.systemInstruction = {
         parts: [{ text: systemInstruction }],
       };
-      
     }
 
     console.log("Loaded Gemini Config: ", systemInstruction, temperature, topP);

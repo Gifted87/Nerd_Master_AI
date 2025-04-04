@@ -70,6 +70,20 @@
       <div class="overlay__container dialog-container">
         <h2 class="auth-container__title">What do you need help with?</h2>
         <form class="auth-form" id="customization-form">
+          <button
+            type="button"
+            class="auth-form__button auth-button"
+            id="generate-document-from-customization-button"
+            style="
+              background: transparent;
+              border: 1px solid var(--glass-border);
+              margin-top: 0.5rem; /* Adjust margin as needed */
+              background-color: #8b5cf6;
+            "
+          >
+            <i class="fas fa-file-alt"></i> Generate New Document
+          </button>
+
           <div class="auth-form__group form-group">
             <label class="form-group__label" for="task-type-select"
               >Task Type</label
@@ -101,55 +115,58 @@
               rows="4"
             ></textarea>
           </div>
-
-          <!-- Advanced Settings Drawer -->
-          <div class="advanced-settings">
-            <button
-              type="button"
-              class="advanced-settings-toggle"
-              id="advanced-settings-toggle"
-            >
-              Advanced Settings <i class="fas fa-chevron-down"></i>
-            </button>
-            <div
-              class="advanced-settings-drawer hidden"
-              id="advanced-settings-drawer"
-            >
-              <div class="auth-form__group form-group">
-                <label class="form-group__label" for="temperature-input"
-                  >Temperature</label
-                >
-                <input
-                  type="range"
-                  class="form-group__input"
-                  id="temperature-input"
-                  min="0"
-                  max="2"
-                  step="0.1"
-                  value="0.7"
-                />
-              </div>
-              <div class="auth-form__group form-group" style="display: none">
-                <label class="form-group__label" for="ai-model-select"
-                  >AI Model</label
-                >
-                <select class="form-group__input" id="ai-model-select">
-                  <option value="gemini-2.0-flash-exp">Gemini Flash</option>
-                  <option value="gemini-pro">Gemini Pro</option>
-                  <!-- Add more models here -->
-                </select>
-              </div>
-              <div class="auth-form__group form-group">
-                <label class="form-group__label" for="top-p-input">Top P</label>
-                <input
-                  type="range"
-                  class="form-group__input"
-                  id="top-p-input"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value="0.5"
-                />
+          <div style="display: none">
+            <!-- Advanced Settings Drawer -->
+            <div class="advanced-settings">
+              <button
+                type="button"
+                class="advanced-settings-toggle"
+                id="advanced-settings-toggle"
+              >
+                Advanced Settings <i class="fas fa-chevron-down"></i>
+              </button>
+              <div
+                class="advanced-settings-drawer hidden"
+                id="advanced-settings-drawer"
+              >
+                <div class="auth-form__group form-group">
+                  <label class="form-group__label" for="temperature-input"
+                    >Temperature</label
+                  >
+                  <input
+                    type="range"
+                    class="form-group__input"
+                    id="temperature-input"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value="0.7"
+                  />
+                </div>
+                <div class="auth-form__group form-group" style="display: none">
+                  <label class="form-group__label" for="ai-model-select"
+                    >AI Model</label
+                  >
+                  <select class="form-group__input" id="ai-model-select">
+                    <option value="gemini-2.0-flash-exp">Gemini Flash</option>
+                    <option value="gemini-pro">Gemini Pro</option>
+                    <!-- Add more models here -->
+                  </select>
+                </div>
+                <div class="auth-form__group form-group">
+                  <label class="form-group__label" for="top-p-input"
+                    >Top P</label
+                  >
+                  <input
+                    type="range"
+                    class="form-group__input"
+                    id="top-p-input"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value="0.5"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -164,9 +181,72 @@
           type="button"
           class="auth-form__button auth-button"
           id="cancel-customization-button"
-          style="align-self: center; justify-self: center; width: 100%,"
+          style="align-self: center; justify-self: center; width: 100%"
         >
           Just Chat
+        </button>
+      </div>
+    </div>
+
+    <!-- Add after chatbot-customization-dialog -->
+    <div class="overlay hidden" id="export-dialog">
+      <div class="overlay__container dialog-container">
+        <h2 class="auth-container__title">Create Document</h2>
+        <form id="export-form" class="auth-form">
+          <div class="auth-form__group form-group" style="display: none">
+            <label class="form-group__label">Content Selection</label>
+            <div class="radio-group">
+              <label
+                ><input type="radio" name="content" value="last" checked /> Last
+                Reply</label
+              >
+              <label
+                ><input type="radio" name="content" value="full" />Entire
+                Conversation</label
+              >
+            </div>
+          </div>
+
+          <div class="auth-form__group form-group">
+            <label class="form-group__label">Document Type</label>
+            <select class="form-group__input" id="doc-type" required>
+              <option value="pdf">PDF</option>
+              <option value="docx">Word Document</option>
+              <option value="pptx">PowerPoint</option>
+            </select>
+          </div>
+
+          <div
+            class="auth-form__group form-group hidden"
+            id="chapter-input"
+            style="display: none"
+          >
+            <label class="form-group__label" style="display: none"
+              >Content Specification</label
+            >
+            <textarea
+              class="form-group__input"
+              placeholder="Chapter: 2, Methods:4-5"
+              style="display: none"
+            ></textarea>
+          </div>
+
+          <button type="submit" class="auth-form__button auth-button">
+            Export Document
+          </button>
+        </form>
+
+        <button
+          type="button"
+          class="auth-form__button auth-button"
+          id="cancel-export-button"
+          style="
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            margin-top: 1rem;
+          "
+        >
+          Cancel
         </button>
       </div>
     </div>
@@ -210,6 +290,9 @@
             <i class="fas fa-graduation-cap"></i> Nerd Master AI
           </h1>
           <div class="sidebar__actions">
+            <button class="sidebar__button" id="export-fab" title="Export">
+              <i class="fas fa-file-export"></i>
+            </button>
             <button
               class="sidebar__button"
               id="new-chat-button"
@@ -290,7 +373,7 @@
               class="action-btn"
               data-action="Take the last response and rewrite it in a way that feels human-written. Use a conversational tone with varied sentence structures, natural phrasing, and occasional filler words like 'Honestly' or 'You know.' Add subtle imperfections, such as slight redundancy, minor grammar quirks, or informal transitions. Include relatable touches like shared experiences or emotions, and avoid robotic phrasing or excessive polish. Make sure the rewritten response sounds dynamic, thoughtful, and natural while maintaining its clarity and purpose."
               data-tooltip=""
-              style="display: none;"
+              style="display: none"
             >
               <i class="fas fa-person"></i><span>Humanize</span>
             </button>
@@ -378,7 +461,7 @@
             <textarea
               class="input-area__input chat-input"
               id="chat-input"
-              placeholder="Type a message, then press CTRL + Enter to send or CMD + Enter on Mac"
+              placeholder="What do you want to do?"
               aria-label="Chat input"
               required
             ></textarea>
@@ -530,9 +613,105 @@
     </div>
     <div class="overlay hidden" id="loading-overlay">
       <div class="loading-spinner"></div>
-      <p id="loading-text" style="color: white; margin-top: 1rem"></p>
+      <p id="loading-text"></p>
     </div>
     <textarea id="copy-content" class="hidden"></textarea>
+
+    <!-- NEW Document Generation Dialog -->
+    <div class="overlay hidden" id="document-generation-dialog">
+      <div class="overlay__container dialog-container">
+        <!-- Reuse dialog-container -->
+        <h2 class="auth-container__title">Generate New Document</h2>
+        <form class="auth-form" id="document-generation-form">
+          <div class="auth-form__group form-group">
+            <label class="form-group__label" for="doc-gen-type"
+              >Document Type</label
+            >
+            <select class="form-group__input" id="doc-gen-type" required>
+              <option value="pdf">PDF</option>
+              <option value="docx">Word Document (.docx)</option>
+              <option value="pptx">PowerPoint (.pptx)</option>
+            </select>
+          </div>
+
+          <div class="auth-form__group form-group">
+            <label class="form-group__label" for="doc-gen-description"
+              >Description / Topic</label
+            >
+            <textarea
+              class="form-group__input"
+              id="doc-gen-description"
+              placeholder="Enter the topic or a detailed description of the document you want to generate."
+              required
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="auth-form__group form-group">
+            <label class="form-group__label" for="doc-gen-pages"
+              >Approximate Number of Pages (1-30)</label
+            >
+            <input
+              type="number"
+              class="form-group__input"
+              id="doc-gen-pages"
+              min="1"
+              max="30"
+              value="5"
+              required
+            />
+            <!-- Optional: Add a slider as well -->
+            <!-- <input type="range" class="form-group__input" id="doc-gen-pages-slider" min="1" max="30" value="5" style="margin-top: 0.5rem;"> -->
+          </div>
+
+          <button
+            type="submit"
+            class="auth-form__button auth-button"
+            id="proceed-generate-document-button"
+          >
+            Proceed
+          </button>
+        </form>
+        <button
+          type="button"
+          class="auth-form__button auth-button"
+          id="cancel-generate-document-button"
+          style="
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            margin-top: 1rem;
+          "
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="generation-result-display">
+      <div class="overlay__container">
+        <!-- Reuse overlay__container for background/blur -->
+        <p class="verify-email__text" id="result-message" style="margin-bottom: 1.5rem">
+          <!-- Message will be set dynamically -->
+        </p>
+        <div id="result-buttons" style="display: flex; justify-content: center; gap: 1rem">
+          <!-- Download button (initially hidden) styled like close button -->
+          <a
+            href="#"
+            id="result-download-button"
+            class="verify-email__close-button hidden"
+            download
+            target="_blank"
+            style="text-decoration: none"
+          >
+            Download Document
+          </a>
+          <!-- Go Back button styled like close button -->
+          <button class="verify-email__close-button" id="result-goback-button">
+            Go Back
+          </button>
+        </div>
+      </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown.js/0.5.0/markdown.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
