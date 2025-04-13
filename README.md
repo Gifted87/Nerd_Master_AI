@@ -1,5 +1,4 @@
-## Nerd Master AI - Comprehensive Documentation
-
+## Nerd Master AI 
 **Version:** 1.0 (Based on provided code)
 
 **Table of Contents:**
