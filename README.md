@@ -1,6 +1,4 @@
 ## Nerd Master AI 
-**Version:** 1.0 (Based on provided code)
-
 **Table of Contents:**
 
 1.  **Introduction**
